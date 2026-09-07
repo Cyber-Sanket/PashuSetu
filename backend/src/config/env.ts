@@ -15,7 +15,7 @@ export const ENV = {
     API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
   },
   SUPABASE: {
-    URL: process.env.SUPABASE_URL || '',
+    URL: process.env.SUPABASE_URL || 'https://qiishporwdihbcdnhhpl.supabase.co',
     SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '',
     STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'pashusetu-photos',
   },

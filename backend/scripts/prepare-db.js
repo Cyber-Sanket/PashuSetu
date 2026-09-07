@@ -15,8 +15,8 @@ const schemaPath = path.join(prismaDir, 'schema.prisma');
 // the schema datamodel and datasource protocol. It does not initiate a database connection.
 // If DATABASE_URL is not yet set in the build container, provide a valid fallback PostgreSQL URI.
 if (!process.env.DATABASE_URL || process.env.DATABASE_URL.trim() === '') {
-  console.log('[PashuSetu DB] No DATABASE_URL found in build environment. Providing dummy PostgreSQL URI for client generation...');
-  process.env.DATABASE_URL = 'postgresql://postgres:dummy_build_password@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require';
+  // In-memory placeholder strictly for Prisma generate datamodel validation during headless build phase
+  process.env.DATABASE_URL = 'postgresql://build_user:build_placeholder@127.0.0.1:5432/pashusetu_build';
 }
 
 // Guarantee schema.prisma is configured for Supabase PostgreSQL
