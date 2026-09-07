@@ -9,7 +9,7 @@
     "start": "node dist/server.js",
     "postinstall": "node scripts/prepare-db.js",
     "prisma:generate": "node scripts/prepare-db.js",
-    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:deploy": "node scripts/deploy-migrations.js",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts"
   },
