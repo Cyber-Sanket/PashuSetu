@@ -72,3 +72,6 @@ Thumbs.db
 # Antigravity IDE & AI session scratchpads
 .system_generated/
 .gemini/
+
+# Local Netlify folder
+.netlify
