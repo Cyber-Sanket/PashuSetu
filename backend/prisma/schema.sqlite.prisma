@@ -1,0 +1,297 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String          @id @default(uuid())
+  name         String
+  email        String          @unique
+  mobile       String?
+  passwordHash String
+  role         String          // FARMER, VETERINARIAN, GOVERNMENT
+  language     String          @default("en") // en, mr, hi
+  status       String          @default("ACTIVE")
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  farmerProfile   FarmerProfile?
+  vetProfile      VetProfile?
+  govtProfile     GovtProfile?
+  symptomReports  SymptomReport[]
+  notifications   Notification[]
+}
+
+model FarmerProfile {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  village   String
+  block     String
+  district  String
+  state     String   @default("Maharashtra")
+  pincode   String?
+  animals   Animal[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VetProfile {
+  id               String        @id @default(uuid())
+  userId           String        @unique
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vetId            String        @unique
+  qualification    String
+  hospitalName     String
+  assignedDistrict String
+  assignedBlock    String?
+  cases            DiseaseCase[]
+  treatments       Treatment[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model GovtProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  officialId   String   @unique
+  department   String
+  designation  String
+  jurisdiction String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Animal {
+  id                   String            @id @default(uuid())
+  farmerId             String
+  farmer               FarmerProfile     @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  animalCode           String            @unique
+  name                 String?
+  species              String            // Cow, Buffalo, Goat, Sheep, Poultry, Other
+  breed                String
+  gender               String            // Female, Male
+  dateOfBirth          String?
+  ageYears             Float
+  weightKg             Float?
+  color                String?
+  identificationNumber String?           // Ear Tag
+  healthStatus         String            @default("HEALTHY") // HEALTHY, SICK, OBSERVATION, DECEASED
+  photoUrl             String?
+  village              String
+  block                String
+  district             String
+  latitude             Float?
+  longitude            Float?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  symptomReports   SymptomReport[]
+  vaccinations     Vaccination[]
+  treatments       Treatment[]
+  mortalityReports MortalityReport[]
+}
+
+model SymptomReport {
+  id                    String          @id @default(uuid())
+  reportCode            String          @unique
+  animalId              String
+  animal                Animal          @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  farmerId              String
+  farmerUser            User            @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  symptoms              String          // JSON array string
+  durationDays          Int
+  severity              String          // Mild, Moderate, Severe
+  temperatureF          Float?
+  appetiteStatus        String          // Normal, Reduced, None
+  milkProductionChange  String          // None, Slight Drop, Severe Drop
+  additionalDescription String?
+  photoUrl              String?
+  latitude              Float?
+  longitude             Float?
+  village               String
+  block                 String
+  district              String
+  riskScore             Int             @default(0)
+  riskLevel             String          @default("LOW") // LOW, MEDIUM, HIGH, CRITICAL
+  status                String          @default("SUBMITTED") // SUBMITTED, UNDER_REVIEW, VET_ASSIGNED, SAMPLE_REQUESTED, DIAGNOSIS_AVAILABLE, TREATMENT_STARTED, RESOLVED, CLOSED
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  riskAssessment RiskAssessment?
+  diseaseCase    DiseaseCase?
+}
+
+model RiskAssessment {
+  id                   String        @id @default(uuid())
+  reportId             String        @unique
+  report               SymptomReport @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  riskScore            Int
+  riskLevel            String        // LOW, MEDIUM, HIGH, CRITICAL
+  possibleCategory     String
+  riskFactors          String        // JSON array string
+  recommendedAction    String
+  isDecisionSupportOnly Boolean       @default(true)
+  engineVersion        String        @default("v1.0-rule-based")
+  createdAt            DateTime      @default(now())
+}
+
+model DiseaseCase {
+  id                 String         @id @default(uuid())
+  caseCode           String         @unique
+  reportId           String         @unique
+  report             SymptomReport  @relation(fields: [reportId], references: [id], onDelete: Cascade)
+  animalId           String
+  vetId              String?
+  vet                VetProfile?    @relation(fields: [vetId], references: [id], onDelete: SetNull)
+  suspectedDisease   String?
+  confirmedDisease   String?
+  clinicalDiagnosis  String?
+  clinicalSeverity   String?        // Mild, Moderate, Severe, Critical
+  clinicalNotes      String?
+  recommendedAction  String?
+  status             String         @default("UNDER_REVIEW") // UNDER_REVIEW, ASSIGNED, DIAGNOSED, TREATMENT_STARTED, RESOLVED, ESCALATED
+  escalatedToGovt    Boolean        @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  treatments Treatment[]
+  labSamples LabSample[]
+}
+
+model Treatment {
+  id           String       @id @default(uuid())
+  caseId       String
+  diseaseCase  DiseaseCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  animalId     String
+  animal       Animal       @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  vetId        String
+  vet          VetProfile   @relation(fields: [vetId], references: [id], onDelete: Cascade)
+  diagnosis    String
+  medicines    String       // JSON array of medicine objects
+  instructions String?
+  startDate    DateTime     @default(now())
+  endDate      DateTime?
+  followUpDate DateTime?
+  notes        String?
+  createdAt    DateTime     @default(now())
+}
+
+model Vaccination {
+  id               String    @id @default(uuid())
+  animalId         String
+  animal           Animal    @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  vaccineName      String    // FMD, HS, BQ, Brucellosis, Lumpy Skin, Anthrax, PPR
+  batchNumber      String?
+  doseNumber       Int       @default(1)
+  administeredDate DateTime
+  nextDueDate      DateTime?
+  administeredBy   String?
+  status           String    @default("COMPLETED") // COMPLETED, PENDING, OVERDUE
+  notes            String?
+  createdAt        DateTime  @default(now())
+}
+
+model LabSample {
+  id                 String       @id @default(uuid())
+  sampleCode         String       @unique
+  caseId             String
+  diseaseCase        DiseaseCase  @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  animalId           String
+  sampleType         String       // Blood, Nasal Swab, Milk, Tissue, Fecal
+  collectedDate      DateTime     @default(now())
+  collectionLocation String
+  laboratoryName     String
+  testType           String       // RT-PCR, ELISA, Microscopy, Bacterial Culture
+  status             String       @default("REQUESTED") // REQUESTED, COLLECTED, DISPATCHED, RECEIVED, TESTING, COMPLETED
+  result             String?      // POSITIVE, NEGATIVE, INCONCLUSIVE
+  resultNotes        String?
+  resultDate         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+model MortalityReport {
+  id                  String   @id @default(uuid())
+  reportCode          String   @unique
+  animalId            String
+  animal              Animal   @relation(fields: [animalId], references: [id], onDelete: Cascade)
+  farmerId            String
+  dateOfDeath         DateTime
+  symptomsBeforeDeath String
+  suspectedCause      String?
+  otherSickCount      Int      @default(0)
+  description         String?
+  photoUrl            String?
+  village             String
+  block               String
+  district            String
+  latitude            Float?
+  longitude           Float?
+  createdAt           DateTime @default(now())
+}
+
+model Outbreak {
+  id               String   @id @default(uuid())
+  outbreakCode     String   @unique
+  district         String
+  block            String
+  village          String
+  latitude         Float
+  longitude        Float
+  suspectedDisease String
+  caseCount        Int      @default(0)
+  deathCount       Int      @default(0)
+  riskLevel        String   @default("HIGH") // HIGH, CRITICAL
+  status           String   @default("DETECTED") // DETECTED, UNDER_INVESTIGATION, CONFIRMED, CONTAINMENT_ACTIVE, CONTAINED, RESOLVED
+  assignedTeam     String?
+  detectedAt       DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Advisory {
+  id             String   @id @default(uuid())
+  titleEn        String
+  titleMr        String
+  titleHi        String
+  contentEn      String
+  contentMr      String
+  contentHi      String
+  targetDistrict String   @default("ALL")
+  severity       String   @default("WARNING") // NORMAL, WARNING, URGENT
+  issuedBy       String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("ALERT") // ALERT, VACCINE, CASE_UPDATE, OUTBREAK, ADVISORY
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model VetServiceLocation {
+  id             String @id @default(uuid())
+  name           String
+  type           String // District Veterinary Polyclinic, Taluka Dispensary, Primary Aid Center
+  district       String
+  block          String
+  village        String
+  address        String
+  contactPhone   String
+  latitude       Float
+  longitude      Float
+  doctorInCharge String
+  operatingHours String
+}
