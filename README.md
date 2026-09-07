@@ -251,43 +251,84 @@ npm run prisma:seed
 
 ---
 
-## 10. Production Deployment Guide
+## 10. Production Deployment Guide (Bhumi-Satya Architecture)
 
-### A. Database Deployment (Neon / Supabase / Render PostgreSQL)
-1. Sign up at [Neon](https://neon.tech) or [Supabase](https://supabase.com).
-2. Create a new PostgreSQL project named `pashusetu`.
-3. Copy the PostgreSQL connection string (`DATABASE_URL`).
-   - Format: `postgresql://[user]:[password]@[host]/[dbname]?sslmode=require`
+```text
+GitHub
+   │
+   ├── Frontend → Netlify
+   │
+   └── Backend → Railway
+                    │
+                    ↓
+              Supabase PostgreSQL & Storage
+```
 
-### B. Backend Deployment (Render / Railway)
-1. Go to [Render Dashboard](https://dashboard.render.com/) and click **New → Web Service**.
-2. Connect your `pashusetu` GitHub repository.
-3. Configure the service settings:
-   - **Root Directory**: `backend`
-   - **Runtime**: `Node`
+### A. Database & Storage Deployment (Supabase)
+1. Sign in to [Supabase](https://supabase.com) and click **New Project**.
+2. Set the Project Name: `pashusetu`, choose your region (e.g. `ap-south-1 (Mumbai)`), and set a strong database password.
+3. Retrieve your **PostgreSQL Connection String**:
+   - Go to **Project Settings → Database → Connection String → URI**.
+   - Use the URI format:
+     ```text
+     postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
+     ```
+     *(Or the direct port 5432 connection URI)*
+4. Create the **Supabase Storage Bucket** for livestock photos:
+   - Go to **Storage → Buckets → New Bucket**.
+   - Name: `pashusetu-photos`.
+   - Set **Public Bucket** to `ON` (enables public read access for animal & clinical evidence photos).
+5. Retrieve your **API Keys**:
+   - Go to **Project Settings → API**.
+   - Copy `Project URL` (e.g. `https://[PROJECT-REF].supabase.co`).
+   - Copy `service_role` secret key (for backend server storage uploads).
+
+### B. Backend Deployment (Railway)
+1. Sign in to [Railway](https://railway.com/) and click **New Project → Deploy from GitHub repo**.
+2. Select your `pashusetu` repository.
+3. In Railway service **Settings**:
+   - **Root Directory**: Set to `/backend` (or use the included root `railway.json`).
    - **Build Command**: `npm install && npm run build`
    - **Start Command**: `npm run prisma:migrate:deploy && npm start`
-4. Add Environment Variables in the Render dashboard:
-   - `DATABASE_URL`: *(Your cloud PostgreSQL connection string)*
-   - `JWT_SECRET`: *(A random secure 32+ character string)*
-   - `NODE_ENV`: `production`
-   - `FRONTEND_URL`: `https://<your-site>.netlify.app`
-   - `CORS_ORIGIN`: `https://<your-site>.netlify.app`
-   - *(Optional)* `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
-5. Click **Create Web Service**. After deployment, note the public API domain:  
-   `https://<service-name>.onrender.com`
+4. In Railway service **Variables**, add:
+   ```env
+   NODE_ENV=production
+   DATABASE_URL=postgresql://postgres.[PROJECT-REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres?sslmode=require
+   JWT_SECRET=pashusetu_sih_secure_jwt_token_secret_key_2026
+   JWT_EXPIRES_IN=7d
+   FRONTEND_URL=https://[YOUR-NETLIFY-SITE].netlify.app
+   CORS_ORIGIN=https://[YOUR-NETLIFY-SITE].netlify.app
+   SUPABASE_URL=https://[PROJECT-REF].supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=[YOUR-SERVICE-ROLE-SECRET]
+   SUPABASE_STORAGE_BUCKET=pashusetu-photos
+   ```
+   *(Note: Railway automatically provides and binds the `PORT` variable).*
+5. Deploy the service. Once deployed, click **Generate Domain** in the Networking section:
+   Example: `https://pashusetu-backend-production.up.railway.app`
+6. Run the database seed script to populate demo records:
+   - In Railway, open the service **Deployments → View Logs** or open the **CLI / Terminal** tab:
+     ```bash
+     npm run prisma:seed
+     ```
+7. Verify health check:
+   ```bash
+   curl https://<your-railway-domain>.up.railway.app/api/health
+   # Response: {"status":"ok","service":"PashuSetu API",...}
+   ```
 
 ### C. Frontend Deployment (Netlify)
 1. Sign in to [Netlify](https://app.netlify.com/) and select **Add new site → Import an existing project**.
-2. Select your `pashusetu` repository from GitHub.
+2. Select your `pashusetu` GitHub repository.
 3. Configure Build Settings:
    - **Base directory**: `frontend`
    - **Build command**: `npm run build`
    - **Publish directory**: `dist`
-4. Add Environment Variable:
-   - `VITE_API_URL`: `https://<your-service-name>.onrender.com/api`
+4. Add Environment Variable in Netlify **Site configuration → Environment variables**:
+   ```env
+   VITE_API_URL=https://[YOUR-RAILWAY-DOMAIN].up.railway.app/api
+   ```
 5. Click **Deploy Site**.
-6. SPA routing is managed automatically via `frontend/public/_redirects` and `netlify.toml` (`/*  /index.html  200`), preventing 404s on deep links like `/farmer/dashboard` or `/government/dashboard`.
+6. SPA routing is managed automatically via `frontend/public/_redirects` and `frontend/netlify.toml` (`/*  /index.html  200`), preventing 404s on deep links like `/farmer/dashboard`, `/veterinarian/cases`, or `/government/dashboard`.
 
 ---
 

@@ -72,7 +72,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
-    service: 'PashuSetu Backend API',
+    service: 'PashuSetu API',
     version: '1.0.0',
     environment: ENV.NODE_ENV,
     timestamp: new Date().toISOString(),

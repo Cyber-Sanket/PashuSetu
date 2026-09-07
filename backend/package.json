@@ -7,9 +7,12 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "postinstall": "prisma generate",
+    "prepare:db": "node scripts/prepare-db.js",
+    "prisma:postgres": "node scripts/prepare-db.js postgres",
+    "prisma:sqlite": "node scripts/prepare-db.js sqlite",
+    "postinstall": "node scripts/prepare-db.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:deploy": "node scripts/prepare-db.js && prisma migrate deploy",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts"
   },
@@ -18,6 +21,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",
+    "@supabase/supabase-js": "^2.115.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.11.0",
     "cors": "^2.8.5",

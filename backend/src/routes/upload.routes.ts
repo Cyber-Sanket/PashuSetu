@@ -3,9 +3,18 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { v2 as cloudinary } from 'cloudinary';
+import { createClient } from '@supabase/supabase-js';
 import { ENV } from '../config/env';
 
 const router = Router();
+
+// Configure Supabase Client for Persistent Cloud Storage
+const isSupabaseConfigured = Boolean(
+  ENV.SUPABASE.URL && ENV.SUPABASE.SERVICE_ROLE_KEY
+);
+const supabase = isSupabaseConfigured
+  ? createClient(ENV.SUPABASE.URL, ENV.SUPABASE.SERVICE_ROLE_KEY)
+  : null;
 
 // Configure Cloudinary if credentials are provided
 const isCloudinaryConfigured = Boolean(
@@ -21,6 +30,7 @@ if (isCloudinaryConfigured) {
     api_secret: ENV.CLOUDINARY.API_SECRET,
   });
 }
+
 
 const uploadsDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadsDir)) {
@@ -74,6 +84,42 @@ router.post('/', (req: Request, res: Response): void => {
     }
 
     try {
+      if (isSupabaseConfigured && supabase) {
+        // Upload to Supabase Storage for persistent production cloud storage
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const bucketName = ENV.SUPABASE.STORAGE_BUCKET || 'pashusetu-photos';
+        const uniqueFileName = `livestock/${req.file.filename}`;
+
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from(bucketName)
+          .upload(uniqueFileName, fileBuffer, {
+            contentType: req.file.mimetype,
+            upsert: true,
+          });
+
+        if (uploadErr) {
+          console.warn('Supabase storage upload error, attempting fallback:', uploadErr.message);
+        } else {
+          const { data: publicUrlData } = supabase.storage
+            .from(bucketName)
+            .getPublicUrl(uniqueFileName);
+
+          // Clean up local temp file
+          try {
+            fs.unlinkSync(req.file.path);
+          } catch (unlinkErr) {}
+
+          res.status(201).json({
+            url: publicUrlData.publicUrl,
+            filename: req.file.filename,
+            size: req.file.size,
+            mimetype: req.file.mimetype,
+            storage: 'supabase',
+          });
+          return;
+        }
+      }
+
       if (isCloudinaryConfigured) {
         // Upload to Cloudinary for persistent production cloud storage
         const result = await cloudinary.uploader.upload(req.file.path, {
@@ -98,10 +144,11 @@ router.post('/', (req: Request, res: Response): void => {
         return;
       }
 
-      // Fallback: local disk storage with dynamic domain (Render, Railway, or Localhost)
+      // Fallback: local disk storage with dynamic domain (Railway, Render, or Localhost)
       const protocol = req.headers['x-forwarded-proto'] || req.protocol;
       const host = req.get('host') || 'localhost:5000';
       const fileUrl = `${protocol}://${host}/uploads/${req.file.filename}`;
+
 
       res.status(201).json({
         url: fileUrl,
