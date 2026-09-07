@@ -1,0 +1,12 @@
+# Nixpacks build configuration for Railway
+[variables]
+DATABASE_URL = "postgresql://postgres:dummy_build_password@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require"
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "openssl"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run prisma:migrate:deploy && npm start"

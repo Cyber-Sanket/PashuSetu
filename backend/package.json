@@ -5,14 +5,11 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "node scripts/prepare-db.js && tsc",
     "start": "node dist/server.js",
-    "prepare:db": "node scripts/prepare-db.js",
-    "prisma:postgres": "node scripts/prepare-db.js postgres",
-    "prisma:sqlite": "node scripts/prepare-db.js sqlite",
     "postinstall": "node scripts/prepare-db.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate:deploy": "node scripts/prepare-db.js && prisma migrate deploy",
+    "prisma:generate": "node scripts/prepare-db.js",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts"
   },
