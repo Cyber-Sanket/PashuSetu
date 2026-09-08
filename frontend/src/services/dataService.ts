@@ -72,31 +72,13 @@ export const DataService = {
   },
 
   async getAnimals(species?: string, search?: string): Promise<Animal[]> {
-    return fetchWithFallback(
-      () =>
-        api.get('/animals', {
-          params: {
-            species: species && species !== 'ALL' ? species : undefined,
-            search: search || undefined,
-          },
-        }),
-      FALLBACK_ANIMALS.filter((a) => {
-        if (species && species !== 'ALL' && a.species.toLowerCase() !== species.toLowerCase()) {
-          return false;
-        }
-        if (search) {
-          const q = search.toLowerCase();
-          return (
-            a.name?.toLowerCase().includes(q) ||
-            a.animalCode.toLowerCase().includes(q) ||
-            a.breed.toLowerCase().includes(q) ||
-            a.identificationNumber?.toLowerCase().includes(q)
-          );
-        }
-        return true;
-      }),
-      true
-    );
+    const res = await api.get('/animals', {
+      params: {
+        species: species && species !== 'ALL' ? species : undefined,
+        search: search || undefined,
+      },
+    });
+    return res.data;
   },
 
   async getAnimalById(id: string): Promise<Animal> {

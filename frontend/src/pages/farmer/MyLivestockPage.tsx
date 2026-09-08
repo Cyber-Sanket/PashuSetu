@@ -122,17 +122,29 @@ export const MyLivestockPage: React.FC = () => {
   });
 
   const speciesList = ['ALL', 'Cow', 'Buffalo', 'Goat', 'Sheep', 'Poultry', 'Other'];
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const fetchAnimals = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await DataService.getAnimals(
         selectedSpecies !== 'ALL' ? selectedSpecies : undefined,
         searchQuery || undefined
       );
-      setAnimals(data);
-    } catch (err) {
+      setAnimals(Array.isArray(data) ? data : []);
+    } catch (err: any) {
       console.error('Failed to load livestock:', err);
+      setAnimals([]);
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message;
+      setLoadError(
+        msg ||
+          (language === 'mr'
+            ? 'पशूंची माहिती मिळवण्यात त्रुटी आली.'
+            : language === 'hi'
+            ? 'पशु डेटा लोड करने में विफल।'
+            : 'Failed to load livestock.')
+      );
     } finally {
       setLoading(false);
     }
@@ -286,6 +298,22 @@ export const MyLivestockPage: React.FC = () => {
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
         </form>
       </div>
+
+      {/* Error Alert */}
+      {loadError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center justify-between text-xs text-red-700">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={() => fetchAnimals()}
+            className="text-xs font-bold text-red-800 underline hover:no-underline"
+          >
+            {language === 'mr' ? 'पुन्हा प्रयत्न करा' : language === 'hi' ? 'पुनः प्रयास करें' : 'Retry'}
+          </button>
+        </div>
+      )}
 
       {/* Livestock Roster Grid */}
       {loading ? (
