@@ -15,6 +15,8 @@ import {
   Eye,
   AlertCircle,
   Camera,
+  Edit3,
+  Trash2,
 } from 'lucide-react';
 
 const SPECIES_BREED_MAP: Record<string, string[]> = {
@@ -82,10 +84,16 @@ export const MyLivestockPage: React.FC = () => {
   const [selectedSpecies, setSelectedSpecies] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Add Modal State
+  // Add / Edit Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingAnimal, setEditingAnimal] = useState<Animal | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Delete Confirmation State
+  const [animalToDelete, setAnimalToDelete] = useState<Animal | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Photo Update Modal State
   const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
@@ -119,6 +127,9 @@ export const MyLivestockPage: React.FC = () => {
     color: 'Reddish Brown',
     identificationNumber: '',
     photoUrl: '',
+    village: '',
+    block: '',
+    district: '',
   });
 
   const speciesList = ['ALL', 'Cow', 'Buffalo', 'Goat', 'Sheep', 'Poultry', 'Other'];
@@ -168,7 +179,54 @@ export const MyLivestockPage: React.FC = () => {
     }));
   };
 
-  const handleAddAnimal = async (e: React.FormEvent) => {
+  const handleOpenAddModal = () => {
+    setEditingAnimal(null);
+    setModalError(null);
+    setFormData({
+      name: '',
+      species: '',
+      breed: '',
+      customBreed: '',
+      gender: 'Female',
+      ageYears: '3.0',
+      weightKg: '350',
+      color: 'Reddish Brown',
+      identificationNumber: '',
+      photoUrl: '',
+      village: '',
+      block: '',
+      district: '',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleOpenEditModal = (animal: Animal) => {
+    setEditingAnimal(animal);
+    setModalError(null);
+    const knownBreeds = SPECIES_BREED_MAP[animal.species] || [];
+    const matchedKnown = knownBreeds.find(
+      (b) => b === animal.breed || b.toLowerCase().startsWith(animal.breed.toLowerCase().split(' ')[0])
+    );
+
+    setFormData({
+      name: animal.name || '',
+      species: animal.species || '',
+      breed: matchedKnown || (animal.breed ? 'Other / Unknown' : ''),
+      customBreed: matchedKnown ? '' : (animal.breed || ''),
+      gender: animal.gender || 'Female',
+      ageYears: animal.ageYears !== undefined ? String(animal.ageYears) : '3.0',
+      weightKg: animal.weightKg !== undefined && animal.weightKg !== null ? String(animal.weightKg) : '',
+      color: animal.color || 'Reddish Brown',
+      identificationNumber: animal.identificationNumber || '',
+      photoUrl: animal.photoUrl || '',
+      village: animal.village || '',
+      block: animal.block || '',
+      district: animal.district || '',
+    });
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveAnimal = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setModalError(null);
@@ -190,56 +248,114 @@ export const MyLivestockPage: React.FC = () => {
         ? formData.customBreed.trim() || 'Other / Unknown'
         : formData.breed;
 
+    const payload = {
+      name: formData.name.trim(),
+      species: formData.species,
+      breed: finalBreed,
+      gender: formData.gender,
+      ageYears: parseFloat(formData.ageYears) || 0,
+      weightKg: formData.weightKg ? parseFloat(formData.weightKg) : null,
+      color: formData.color.trim() || undefined,
+      identificationNumber: formData.identificationNumber.trim() || undefined,
+      photoUrl: formData.photoUrl || undefined,
+      village: formData.village.trim() || undefined,
+      block: formData.block.trim() || undefined,
+      district: formData.district.trim() || undefined,
+    };
+
     try {
-      await api.post('/animals', {
-        ...formData,
-        breed: finalBreed,
-      });
+      if (editingAnimal) {
+        await api.put(`/animals/${editingAnimal.id}`, payload);
+      } else {
+        await api.post('/animals', payload);
+      }
       setIsAddModalOpen(false);
-      // Reset form
-      setFormData({
-        name: '',
-        species: '',
-        breed: '',
-        customBreed: '',
-        gender: 'Female',
-        ageYears: '3.0',
-        weightKg: '350',
-        color: 'Reddish Brown',
-        identificationNumber: '',
-        photoUrl: '',
-      });
+      setEditingAnimal(null);
       fetchAnimals();
     } catch (err: any) {
-      // Offline / fallback addition
+      // Offline fallback addition
       if (!err.response) {
-        const newDemoAnimal: Animal = {
-          id: `local-animal-${Date.now()}`,
-          farmerId: 'fp-01',
-          animalCode: `PS-${formData.species.toUpperCase().slice(0, 3)}-${Math.floor(100 + Math.random() * 900)}`,
-          name: formData.name,
-          species: formData.species,
-          breed: finalBreed,
-          gender: formData.gender,
-          ageYears: parseFloat(formData.ageYears) || 3,
-          weightKg: parseFloat(formData.weightKg) || 350,
-          color: formData.color,
-          identificationNumber: formData.identificationNumber || `TAG-MH-${Math.floor(100000 + Math.random() * 900000)}`,
-          healthStatus: 'HEALTHY',
-          photoUrl: formData.photoUrl,
-          village: 'Uruli Kanchan',
-          block: 'Haveli',
-          district: 'Pune',
-          createdAt: new Date().toISOString(),
-        };
-        FALLBACK_ANIMALS.unshift(newDemoAnimal);
-        setAnimals((prev) => [newDemoAnimal, ...prev]);
-        setIsAddModalOpen(false);
-        return;
+        if (editingAnimal) {
+          setAnimals((prev) =>
+            prev.map((a) =>
+              a.id === editingAnimal.id
+                ? {
+                    ...a,
+                    ...payload,
+                    ageYears: parseFloat(formData.ageYears) || a.ageYears,
+                    weightKg: formData.weightKg ? parseFloat(formData.weightKg) : a.weightKg,
+                    color: formData.color,
+                    village: formData.village || a.village,
+                    block: formData.block || a.block,
+                    district: formData.district || a.district,
+                  }
+                : a
+            )
+          );
+          setIsAddModalOpen(false);
+          setEditingAnimal(null);
+          return;
+        } else {
+          const newDemoAnimal: Animal = {
+            id: `local-animal-${Date.now()}`,
+            farmerId: 'fp-01',
+            animalCode: `PS-${formData.species.toUpperCase().slice(0, 3)}-${Math.floor(100 + Math.random() * 900)}`,
+            name: formData.name,
+            species: formData.species,
+            breed: finalBreed,
+            gender: formData.gender,
+            ageYears: parseFloat(formData.ageYears) || 3,
+            weightKg: parseFloat(formData.weightKg) || 350,
+            color: formData.color,
+            identificationNumber: formData.identificationNumber || `TAG-MH-${Math.floor(100000 + Math.random() * 900000)}`,
+            healthStatus: 'HEALTHY',
+            photoUrl: formData.photoUrl,
+            village: formData.village || 'Uruli Kanchan',
+            block: formData.block || 'Haveli',
+            district: formData.district || 'Pune',
+            createdAt: new Date().toISOString(),
+          };
+          FALLBACK_ANIMALS.unshift(newDemoAnimal);
+          setAnimals((prev) => [newDemoAnimal, ...prev]);
+          setIsAddModalOpen(false);
+          return;
+        }
       }
-      setModalError(err.response?.data?.error || t('failedToAddAnimal'));
+      setModalError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        (editingAnimal
+          ? (language === 'mr' ? 'पशू अद्यतनित करण्यात त्रुटी आली.' : 'Failed to update animal')
+          : t('failedToAddAnimal'))
+      );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!animalToDelete) return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.delete(`/animals/${animalToDelete.id}`);
+      setAnimals((prev) => prev.filter((a) => a.id !== animalToDelete.id));
+      setAnimalToDelete(null);
+      fetchAnimals();
+    } catch (err: any) {
+      console.error('Failed to delete animal:', err);
+      if (!err.response) {
+        setAnimals((prev) => prev.filter((a) => a.id !== animalToDelete.id));
+        setAnimalToDelete(null);
+        return;
+      }
+      setDeleteError(
+        err.response?.data?.error ||
+        err.response?.data?.message ||
+        (language === 'mr' ? 'पशू हटवण्यात त्रुटी आली.' : 'Failed to delete animal. Please try again.')
+      );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -259,7 +375,7 @@ export const MyLivestockPage: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsAddModalOpen(true)}
+          onClick={handleOpenAddModal}
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow flex items-center gap-2 self-start sm:self-auto transition-transform hover:scale-105"
         >
           <PlusCircle className="w-4 h-4" />
@@ -323,7 +439,7 @@ export const MyLivestockPage: React.FC = () => {
           <p className="text-sm font-semibold text-slate-700">{t('noLivestockFound')}</p>
           <p className="text-xs text-slate-500">{t('registerToStartMonitoring')}</p>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl"
           >
             <PlusCircle className="w-4 h-4" />
@@ -406,22 +522,47 @@ export const MyLivestockPage: React.FC = () => {
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
-                  <Link
-                    to={`/farmer/report-symptoms?animalId=${animal.id}`}
-                    className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                  >
-                    <HeartPulse className="w-3.5 h-3.5" />
-                    <span>{t('reportSymptomBtn')}</span>
-                  </Link>
+                <div className="p-3 bg-slate-50 border-t border-slate-100 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Link
+                      to={`/farmer/report-symptoms?animalId=${animal.id}`}
+                      className="flex-1 text-center text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1"
+                    >
+                      <HeartPulse className="w-3.5 h-3.5" />
+                      <span>{t('reportSymptomBtn')}</span>
+                    </Link>
 
-                  <Link
-                    to={`/farmer/livestock/${animal.id}`}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{t('medicalRecord')}</span>
-                  </Link>
+                    <Link
+                      to={`/farmer/livestock/${animal.id}`}
+                      className="flex-1 text-center text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>{t('medicalRecord')}</span>
+                    </Link>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-200/60">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(animal)}
+                      className="flex-1 text-xs font-bold text-slate-700 hover:text-emerald-700 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>{language === 'mr' ? 'संपादित करा' : language === 'hi' ? 'संपादित करें' : 'Edit'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAnimalToDelete(animal);
+                        setDeleteError(null);
+                      }}
+                      className="flex-1 text-xs font-bold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-300 px-2.5 py-1.5 rounded-lg transition-colors flex items-center justify-center gap-1 shadow-sm"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                      <span>{language === 'mr' ? 'हटवा' : language === 'hi' ? 'हटाएं' : 'Delete'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -429,11 +570,22 @@ export const MyLivestockPage: React.FC = () => {
         </div>
       )}
 
-      {/* Add Animal Modal */}
+      {/* Add / Edit Animal Modal */}
       <Modal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        title={t('registerNewLivestock')}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingAnimal(null);
+        }}
+        title={
+          editingAnimal
+            ? language === 'mr'
+              ? 'पशू माहिती संपादित करा'
+              : language === 'hi'
+              ? 'पशु विवरण संपादित करें'
+              : 'Edit Livestock Details'
+            : t('registerNewLivestock')
+        }
         maxWidth="lg"
       >
         {modalError && (
@@ -443,7 +595,7 @@ export const MyLivestockPage: React.FC = () => {
           </div>
         )}
 
-        <form onSubmit={handleAddAnimal} className="space-y-4 text-xs sm:text-sm">
+        <form onSubmit={handleSaveAnimal} className="space-y-4 text-xs sm:text-sm">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
@@ -578,6 +730,21 @@ export const MyLivestockPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                {language === 'mr' ? 'रंग' : language === 'hi' ? 'रंग' : 'Color'}
+              </label>
+              <input
+                type="text"
+                placeholder={language === 'mr' ? 'उदा. लालसर तपकिरी' : 'e.g. Reddish Brown'}
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
                 {t('earTagId')}
               </label>
               <input
@@ -586,6 +753,47 @@ export const MyLivestockPage: React.FC = () => {
                 value={formData.identificationNumber}
                 onChange={(e) => setFormData({ ...formData, identificationNumber: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                {language === 'mr' ? 'गाव' : language === 'hi' ? 'गाँव' : 'Village'}
+              </label>
+              <input
+                type="text"
+                placeholder={language === 'mr' ? 'उदा. उरुळी कांचन' : 'e.g. Uruli Kanchan'}
+                value={formData.village}
+                onChange={(e) => setFormData({ ...formData, village: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                {language === 'mr' ? 'तालुका / ब्लॉक' : language === 'hi' ? 'ब्लॉक' : 'Block / Taluka'}
+              </label>
+              <input
+                type="text"
+                placeholder={language === 'mr' ? 'उदा. हवेली' : 'e.g. Haveli'}
+                value={formData.block}
+                onChange={(e) => setFormData({ ...formData, block: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                {t('district')}
+              </label>
+              <input
+                type="text"
+                placeholder={language === 'mr' ? 'उदा. पुणे' : 'e.g. Pune'}
+                value={formData.district}
+                onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
               />
             </div>
           </div>
@@ -603,7 +811,10 @@ export const MyLivestockPage: React.FC = () => {
           <div className="pt-2 flex items-center justify-end gap-2">
             <button
               type="button"
-              onClick={() => setIsAddModalOpen(false)}
+              onClick={() => {
+                setIsAddModalOpen(false);
+                setEditingAnimal(null);
+              }}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
             >
               {t('cancel')}
@@ -613,7 +824,15 @@ export const MyLivestockPage: React.FC = () => {
               disabled={submitting}
               className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition-colors disabled:opacity-50"
             >
-              {submitting ? t('saving') : t('registerLivestockBtn')}
+              {submitting
+                ? t('saving')
+                : editingAnimal
+                ? language === 'mr'
+                  ? 'बदल जतन करा'
+                  : language === 'hi'
+                  ? 'परिवर्तन सहेजें'
+                  : 'Save Changes'
+                : t('registerLivestockBtn')}
             </button>
           </div>
         </form>
@@ -658,6 +877,82 @@ export const MyLivestockPage: React.FC = () => {
               className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition-colors disabled:opacity-50"
             >
               {isSavingPhoto ? t('saving') : t('save')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={Boolean(animalToDelete)}
+        onClose={() => {
+          if (!isDeleting) {
+            setAnimalToDelete(null);
+            setDeleteError(null);
+          }
+        }}
+        title={language === 'mr' ? 'पशू हटवण्याची पुष्टी करा' : language === 'hi' ? 'पशु हटाने की पुष्टि करें' : 'Confirm Animal Deletion'}
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          {deleteError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+              <span>{deleteError}</span>
+            </div>
+          )}
+
+          <div className="p-3.5 bg-red-50/70 border border-red-200 rounded-2xl flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <div className="text-xs space-y-1">
+              <p className="font-bold text-red-900 text-sm font-['Outfit']">
+                {animalToDelete?.name || animalToDelete?.animalCode}
+              </p>
+              <p className="text-slate-600 leading-relaxed">
+                Are you sure you want to delete this animal? This action cannot be undone.
+              </p>
+              {animalToDelete?.identificationNumber && (
+                <p className="text-[11px] font-mono text-slate-500">
+                  {t('earTagId')}: <span className="font-bold text-slate-700">{animalToDelete.identificationNumber}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={() => {
+                setAnimalToDelete(null);
+                setDeleteError(null);
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              type="button"
+              disabled={isDeleting}
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 rounded-xl text-xs font-bold bg-red-600 hover:bg-red-500 text-white shadow transition-colors disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>
+                {isDeleting
+                  ? language === 'mr'
+                    ? 'हटवत आहे...'
+                    : language === 'hi'
+                    ? 'हटाया जा रहा है...'
+                    : 'Deleting...'
+                  : language === 'mr'
+                  ? 'हटवा'
+                  : language === 'hi'
+                  ? 'हटाएं'
+                  : 'Delete Animal'}
+              </span>
             </button>
           </div>
         </div>

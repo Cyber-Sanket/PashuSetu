@@ -87,6 +87,16 @@ export const DataService = {
     return fetchWithFallback(() => api.get(`/animals/${id}`), fallback, false);
   },
 
+  async updateAnimal(id: string, data: Partial<Animal>): Promise<Animal> {
+    const res = await api.put(`/animals/${id}`, data);
+    return res.data;
+  },
+
+  async deleteAnimal(id: string): Promise<{ message: string }> {
+    const res = await api.delete(`/animals/${id}`);
+    return res.data;
+  },
+
   async getFarmerReports(): Promise<SymptomReport[]> {
     return fetchWithFallback(() => api.get('/reports'), FALLBACK_REPORTS, true);
   },

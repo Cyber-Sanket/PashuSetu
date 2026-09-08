@@ -228,39 +228,92 @@ router.post('/', authenticateJwt, requireRole('FARMER'), async (req: Authenticat
   }
 });
 
-// 5. Update Animal
-router.put('/:id', authenticateJwt, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+// 5. Update Animal (PUT & PATCH)
+const updateAnimalHandler = async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
-    const { name, breed, ageYears, weightKg, color, healthStatus, identificationNumber, photoUrl } = req.body;
+    const {
+      name,
+      species,
+      breed,
+      gender,
+      ageYears,
+      weightKg,
+      color,
+      healthStatus,
+      identificationNumber,
+      photoUrl,
+      village,
+      block,
+      district,
+    } = req.body;
+
+    const existing = await prisma.animal.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Animal not found.' });
+      return;
+    }
+
+    // Ownership check for farmers
+    if (req.user?.role === 'FARMER' && req.user.farmerProfileId) {
+      if (existing.farmerId !== req.user.farmerProfileId) {
+        res.status(403).json({ error: 'You are not authorized to edit this animal.' });
+        return;
+      }
+    }
+
+    const data: any = {};
+    if (name !== undefined) data.name = name;
+    if (species !== undefined) data.species = species;
+    if (breed !== undefined) data.breed = breed;
+    if (gender !== undefined) data.gender = gender;
+    if (ageYears !== undefined) data.ageYears = parseFloat(ageYears);
+    if (weightKg !== undefined) data.weightKg = weightKg ? parseFloat(weightKg) : null;
+    if (color !== undefined) data.color = color;
+    if (healthStatus !== undefined) data.healthStatus = healthStatus;
+    if (identificationNumber !== undefined) data.identificationNumber = identificationNumber;
+    if (photoUrl !== undefined) data.photoUrl = photoUrl;
+    if (village !== undefined) data.village = village;
+    if (block !== undefined) data.block = block;
+    if (district !== undefined) data.district = district;
 
     const updated = await prisma.animal.update({
       where: { id },
-      data: {
-        ...(name && { name }),
-        ...(breed && { breed }),
-        ...(ageYears !== undefined && { ageYears: parseFloat(ageYears) }),
-        ...(weightKg !== undefined && { weightKg: parseFloat(weightKg) }),
-        ...(color && { color }),
-        ...(healthStatus && { healthStatus }),
-        ...(identificationNumber && { identificationNumber }),
-        ...(photoUrl && { photoUrl }),
-      },
+      data,
     });
 
     res.json(updated);
   } catch (error: any) {
+    console.error('Update animal error:', error);
     res.status(500).json({ error: error.message });
   }
-});
+};
+
+router.put('/:id', authenticateJwt, updateAnimalHandler);
+router.patch('/:id', authenticateJwt, updateAnimalHandler);
 
 // 6. Delete Animal
-router.delete('/:id', authenticateJwt, requireRole('FARMER'), async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+router.delete('/:id', authenticateJwt, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {
     const id = req.params.id as string;
+    const existing = await prisma.animal.findUnique({ where: { id } });
+    if (!existing) {
+      res.status(404).json({ error: 'Animal not found.' });
+      return;
+    }
+
+    // Ownership check for farmers
+    if (req.user?.role === 'FARMER' && req.user.farmerProfileId) {
+      if (existing.farmerId !== req.user.farmerProfileId) {
+        res.status(403).json({ error: 'You are not authorized to delete this animal.' });
+        return;
+      }
+    }
+
     await prisma.animal.delete({ where: { id } });
     res.json({ message: 'Animal removed successfully.' });
   } catch (error: any) {
+    console.error('Delete animal error:', error);
     res.status(500).json({ error: error.message });
   }
 });
