@@ -87,7 +87,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 // 2. Universal / Role-based Login
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { identifier, password, role } = req.body;
+    const { password, role } = req.body;
+    const identifier = req.body.identifier || req.body.email || req.body.mobile;
     // identifier can be email, mobile, vetId, or officialId
 
     if (!identifier || !password) {

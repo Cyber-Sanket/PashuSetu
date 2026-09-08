@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { api } from '../../services/api';
-import { UserPlus, AlertCircle, CheckCircle } from 'lucide-react';
+import { UserPlus, AlertCircle } from 'lucide-react';
 
 export const FarmerRegisterPage: React.FC = () => {
   const { login } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -43,7 +45,7 @@ export const FarmerRegisterPage: React.FC = () => {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
+      setError(t('passwordsDoNotMatch'));
       return;
     }
 
@@ -53,7 +55,8 @@ export const FarmerRegisterPage: React.FC = () => {
       login(res.data.token, res.data.user);
       navigate('/farmer');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Registration failed. Please check your details.');
+      const serverMessage = err.response?.data?.error || err.response?.data?.message;
+      setError(serverMessage || t('registrationFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,10 +70,10 @@ export const FarmerRegisterPage: React.FC = () => {
             📝
           </div>
           <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-            Farmer Registration / शेतकरी नोंदणी
+            {t('farmerRegisterTitle')}
           </h1>
           <p className="text-xs text-slate-500">
-            Create an official livestock health surveillance account with the Department of Animal Husbandry
+            {t('farmerRegisterSubtitle')}
           </p>
         </div>
 
@@ -85,12 +88,12 @@ export const FarmerRegisterPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Full Name *
+                {t('fullName')} *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Ramesh Tukaram Patil"
+                placeholder={language === 'mr' ? 'उदा. रमेश तुकाराम पाटील' : 'e.g. Ramesh Tukaram Patil'}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
@@ -99,12 +102,12 @@ export const FarmerRegisterPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Mobile Number *
+                {t('mobileNumber')} *
               </label>
               <input
                 type="tel"
                 required
-                placeholder="10-digit Mobile Number"
+                placeholder={language === 'mr' ? '१० अंकी मोबाईल क्रमांक' : '10-digit Mobile Number'}
                 value={formData.mobile}
                 onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
                 className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
@@ -114,7 +117,7 @@ export const FarmerRegisterPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Email Address *
+              {t('emailAddress')} *
             </label>
             <input
               type="email"
@@ -129,12 +132,12 @@ export const FarmerRegisterPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Password *
+                {t('password')} *
               </label>
               <input
                 type="password"
                 required
-                placeholder="Minimum 6 characters"
+                placeholder={language === 'mr' ? 'किमान ६ अक्षरे' : 'Minimum 6 characters'}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
@@ -143,12 +146,12 @@ export const FarmerRegisterPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Confirm Password *
+                {t('confirmPassword')} *
               </label>
               <input
                 type="password"
                 required
-                placeholder="Re-type password"
+                placeholder={language === 'mr' ? 'पासवर्ड पुन्हा टाका' : 'Re-type password'}
                 value={formData.confirmPassword}
                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                 className="w-full text-xs sm:text-sm px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:bg-white outline-none"
@@ -159,16 +162,16 @@ export const FarmerRegisterPage: React.FC = () => {
           {/* Location Fields */}
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
             <h4 className="font-bold text-xs text-slate-800 uppercase tracking-wider">
-              Location & Jurisdiction
+              {t('locationAndJurisdiction')}
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Village (गाव) *</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('village')} *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Uruli Kanchan"
+                  placeholder={language === 'mr' ? 'उदा. उरुळी कांचन' : 'e.g. Uruli Kanchan'}
                   value={formData.village}
                   onChange={(e) => setFormData({ ...formData, village: e.target.value })}
                   className="w-full text-xs px-2.5 py-2 bg-white border border-slate-300 rounded-lg outline-none"
@@ -176,11 +179,11 @@ export const FarmerRegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">Block / Taluka (तालुका) *</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('block')} *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Haveli"
+                  placeholder={language === 'mr' ? 'उदा. हवेली' : 'e.g. Haveli'}
                   value={formData.block}
                   onChange={(e) => setFormData({ ...formData, block: e.target.value })}
                   className="w-full text-xs px-2.5 py-2 bg-white border border-slate-300 rounded-lg outline-none"
@@ -188,15 +191,30 @@ export const FarmerRegisterPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 mb-1">District (जिल्हा) *</label>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">{t('district')} *</label>
                 <select
                   value={formData.district}
                   onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                   className="w-full text-xs px-2.5 py-2 bg-white border border-slate-300 rounded-lg outline-none font-medium"
                 >
-                  {districts.map((d) => (
-                    <option key={d} value={d}>{d}</option>
-                  ))}
+                  {districts.map((d) => {
+                    let dLabel = d;
+                    if (language === 'mr') {
+                      if (d === 'Pune') dLabel = 'पुणे';
+                      else if (d === 'Satara') dLabel = 'सातारा';
+                      else if (d === 'Ahmednagar') dLabel = 'अहिल्यानगर';
+                      else if (d === 'Solapur') dLabel = 'सोलापूर';
+                      else if (d === 'Nashik') dLabel = 'नाशिक';
+                      else if (d === 'Kolhapur') dLabel = 'कोल्हापूर';
+                      else if (d === 'Sangli') dLabel = 'सांगली';
+                      else if (d === 'Aurangabad') dLabel = 'छत्रपती संभाजीनगर';
+                      else if (d === 'Amravati') dLabel = 'अमरावती';
+                      else if (d === 'Nagpur') dLabel = 'नागपूर';
+                    }
+                    return (
+                      <option key={d} value={d}>{dLabel}</option>
+                    );
+                  })}
                 </select>
               </div>
             </div>
@@ -204,7 +222,7 @@ export const FarmerRegisterPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Preferred Language
+              {t('preferredLanguage')}
             </label>
             <div className="grid grid-cols-3 gap-2">
               {[
@@ -234,15 +252,15 @@ export const FarmerRegisterPage: React.FC = () => {
             className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all disabled:opacity-50"
           >
             <UserPlus className="w-4 h-4" />
-            <span>{isSubmitting ? 'Registering...' : 'Create Farmer Account'}</span>
+            <span>{isSubmitting ? t('registering') : t('createFarmerAccount')}</span>
           </button>
         </form>
 
         <div className="pt-2 text-center text-xs text-slate-500 space-y-1">
           <p>
-            Already have an account?{' '}
+            {t('alreadyHaveAccount')}{' '}
             <Link to="/auth/farmer-login" className="font-bold text-emerald-600 hover:underline">
-              Sign In Here
+              {t('signInHere')}
             </Link>
           </p>
         </div>

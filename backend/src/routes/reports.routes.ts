@@ -283,6 +283,32 @@ router.get('/', authenticateJwt, async (req: AuthenticatedRequest, res: Response
   }
 });
 
+// 3b. Farmer's Reports Endpoint
+router.get('/farmer', authenticateJwt, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const reports = await prisma.symptomReport.findMany({
+      where: { farmerId: req.user!.id },
+      include: {
+        animal: true,
+        riskAssessment: true,
+        diseaseCase: {
+          include: {
+            vet: {
+              include: {
+                user: { select: { name: true, mobile: true } },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    res.json(reports);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // 4. Single Report Details
 router.get('/:id', authenticateJwt, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
   try {

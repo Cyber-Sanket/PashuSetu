@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useLanguage } from '../context/LanguageContext';
+import {
+  useLanguage,
+  getNotificationTitle,
+  getNotificationDescription,
+  getNotificationPriorityLabel,
+} from '../context/LanguageContext';
 import { Language } from '../types';
 import { api } from '../services/api';
 import { DataService } from '../services/dataService';
+import { PASHUSETU_LOGO } from '../constants/assets';
 import {
   Globe,
   Bell,
@@ -94,27 +100,27 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const getPriorityBadge = (notif: any) => {
     if (notif.type === 'OUTBREAK' || notif.title.includes('CRITICAL') || notif.title.includes('🚨')) {
       return {
-        label: 'CRITICAL',
+        label: t('priorityCritical'),
         color: 'bg-red-500/20 text-red-300 border-red-500/40 ring-1 ring-red-500/50',
         icon: Flame,
       };
     }
     if (notif.title.includes('High') || notif.type === 'ALERT') {
       return {
-        label: 'HIGH',
+        label: t('priorityHigh'),
         color: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
         icon: AlertTriangle,
       };
     }
     if (notif.type === 'VACCINE' || notif.type === 'CASE_UPDATE') {
       return {
-        label: 'UPDATE',
+        label: t('priorityUpdate'),
         color: 'bg-blue-500/20 text-blue-300 border-blue-500/40',
         icon: Activity,
       };
     }
     return {
-      label: 'INFO',
+      label: t('priorityInfo'),
       color: 'bg-slate-700 text-slate-300 border-slate-600',
       icon: Activity,
     };
@@ -125,10 +131,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
       const d = new Date(dateStr);
       const diffMs = Date.now() - d.getTime();
       const diffMins = Math.floor(diffMs / (1000 * 60));
-      if (diffMins < 2) return 'Just now';
-      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffMins < 2) return t('justNow');
+      if (diffMins < 60) return `${diffMins} ${t('mAgo')}`;
       const diffHours = Math.floor(diffMins / 60);
-      if (diffHours < 24) return `${diffHours}h ago`;
+      if (diffHours < 24) return `${diffHours} ${t('hAgo')}`;
       return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
     } catch {
       return '';
@@ -156,20 +162,22 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
             )}
 
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-800 flex items-center justify-center text-xl shadow-inner border border-blue-400/30 group-hover:scale-105 transition-transform">
-                🐄
-              </div>
+              <img
+                src={PASHUSETU_LOGO}
+                alt="PashuSetu Logo"
+                className="w-10 h-10 object-contain group-hover:scale-105 transition-transform"
+              />
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-lg lg:text-xl tracking-tight text-white font-['Outfit']">
                     Pashu<span className="text-amber-400">Setu</span>
                   </span>
                   <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-900/80 text-blue-200 border border-blue-700/50">
-                    SIH 6128
+                    SIH26128
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 hidden sm:block">
-                  Govt of Maharashtra • Early Warning System
+                  {t('earlyWarningSystem')}
                 </p>
               </div>
             </Link>
@@ -182,14 +190,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
               <button
                 onClick={() => setShowLangMenu(!showLangMenu)}
                 className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
-                title="Change Language"
+                title={t('changeLanguage')}
               >
                 <Globe className="w-3.5 h-3.5 text-amber-400" />
                 <span className="uppercase">{language}</span>
               </button>
 
               {showLangMenu && (
-                <div className="absolute right-0 mt-2 w-36 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50">
+                <div className="absolute right-0 mt-2 w-40 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-1 z-50">
                   <button
                     onClick={() => { setLanguage('en'); setShowLangMenu(false); }}
                     className={`w-full text-left px-3 py-1.5 text-xs hover:bg-slate-700 flex items-center justify-between ${language === 'en' ? 'text-amber-400 font-bold' : 'text-slate-300'}`}
@@ -225,7 +233,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                       ? 'bg-red-950/60 text-red-400 border border-red-500/60 shadow-[0_0_12px_rgba(239,68,68,0.4)] animate-pulse'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800'
                   }`}
-                  aria-label="Notifications"
+                  aria-label={t('notificationsAlerts')}
                 >
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
@@ -244,10 +252,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                     <div className="p-3.5 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-bold text-white">Notifications & Live Alerts</span>
+                        <span className="text-xs font-bold text-white">{t('notificationsCenter')}</span>
                         {unreadCount > 0 && (
                           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-300 border border-red-500/40">
-                            {unreadCount} unread
+                            {unreadCount} {t('unread')}
                           </span>
                         )}
                       </div>
@@ -256,7 +264,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                           onClick={markAllRead}
                           className="text-[11px] text-blue-400 hover:text-blue-300 font-semibold hover:underline"
                         >
-                          Mark all read
+                          {t('markAllRead')}
                         </button>
                       )}
                     </div>
@@ -265,7 +273,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                       {notifications.length === 0 ? (
                         <div className="p-6 text-center text-xs text-slate-400">
                           <Bell className="w-8 h-8 text-slate-600 mx-auto mb-2 opacity-50" />
-                          <p>No notifications right now.</p>
+                          <p>{t('noNotifications')}</p>
                         </div>
                       ) : (
                         notifications.map((notif) => {
@@ -316,16 +324,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                                     !notif.isRead ? 'font-bold text-white' : 'font-medium text-slate-300'
                                   }`}
                                 >
-                                  {notif.title}
+                                  {getNotificationTitle(notif, language)}
                                 </p>
 
                                 <p className="text-slate-400 text-[11px] leading-relaxed line-clamp-2">
-                                  {notif.message}
+                                  {getNotificationDescription(notif, language)}
                                 </p>
 
                                 {notif.link && (
                                   <p className="text-[10px] text-blue-400 group-hover:text-blue-300 flex items-center gap-1 font-semibold pt-0.5">
-                                    <span>Open related case / report</span>
+                                    <span>{t('openRelatedCase')}</span>
                                     <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                                   </p>
                                 )}
@@ -336,7 +344,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                                 <button
                                   type="button"
                                   onClick={(e) => markSingleRead(e, notif.id)}
-                                  title="Mark as read"
+                                  title={t('markRead')}
                                   className="p-1 rounded text-slate-500 hover:text-emerald-400 hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                                 >
                                   <Check className="w-3.5 h-3.5" />
@@ -355,7 +363,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                         onClick={() => setShowNotifs(false)}
                         className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-400 hover:text-blue-300 transition-colors"
                       >
-                        <span>View Notifications Center</span>
+                        <span>{t('viewNotificationsCenter')}</span>
                         <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
@@ -370,13 +378,13 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
                 <div className="hidden sm:block text-right">
                   <p className="text-xs font-bold text-white leading-tight">{user.name}</p>
                   <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wider">
-                    {user.role}
+                    {user.role === 'FARMER' ? t('farmer') : user.role === 'VETERINARIAN' ? t('veterinarian') : t('government')}
                   </span>
                 </div>
                 <button
                   onClick={handleLogout}
                   className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition-colors"
-                  title="Logout"
+                  title={t('logout')}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>

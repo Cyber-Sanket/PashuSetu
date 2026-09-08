@@ -1,0 +1,12 @@
+# Ensure logo and images are always revalidated so updates are seen immediately
+/images/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/favicon.png
+  Cache-Control: public, max-age=0, must-revalidate
+
+/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/manifest.json
+  Cache-Control: public, max-age=0, must-revalidate

@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { QuickDemoBar } from '../components/QuickDemoBar';
 import { Shield, PhoneCall, Building2 } from 'lucide-react';
+import { PASHUSETU_LOGO } from '../constants/assets';
 
 export const PublicLayout: React.FC = () => {
   return (
@@ -21,13 +22,17 @@ export const PublicLayout: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">🐄</span>
+              <div className="flex items-center gap-2.5 mb-2">
+                <img
+                  src={PASHUSETU_LOGO}
+                  alt="PashuSetu Logo"
+                  className="w-8 h-8 object-contain shrink-0"
+                />
                 <span className="font-bold text-white text-base font-['Outfit']">
                   Pashu<span className="text-amber-400">Setu</span>
                 </span>
                 <span className="text-[10px] bg-blue-900 text-blue-200 px-1.5 py-0.5 rounded font-bold">
-                  SIH 6128
+                  SIH26128
                 </span>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed max-w-md">
@@ -66,7 +71,7 @@ export const PublicLayout: React.FC = () => {
 
           <div className="mt-8 pt-6 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500">
             <p>© {new Date().getFullYear()} Government of Maharashtra. Department of Animal Husbandry.</p>
-            <p>SIH Problem Statement 6128 • MedTech / BioTech / HealthTech</p>
+            <p>SIH Problem Statement SIH26128 • MedTech / BioTech / HealthTech</p>
           </div>
         </div>
       </footer>

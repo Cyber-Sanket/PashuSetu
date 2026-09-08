@@ -3,15 +3,17 @@ import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../../services/api';
 import { DataService } from '../../services/dataService';
 import { Animal } from '../../types';
-import { Skull, AlertTriangle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { useLanguage, getSpeciesLabel, getBreedLabel } from '../../context/LanguageContext';
+import { Skull, AlertTriangle, ArrowLeft } from 'lucide-react';
 
 export const ReportDeathPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t, language } = useLanguage();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState('');
   const [dateOfDeath, setDateOfDeath] = useState(new Date().toISOString().split('T')[0]);
   const [symptomsBeforeDeath, setSymptomsBeforeDeath] = useState('');
-  const [suspectedCause, setSuspectedCause] = useState('Sudden High Fever & Respiratory Collapse');
+  const [suspectedCause, setSuspectedCause] = useState(language === 'mr' ? 'अचानक तीव्र ताप व श्वासोच्छवासाचा त्रास' : 'Sudden High Fever & Respiratory Collapse');
   const [otherSickCount, setOtherSickCount] = useState('0');
   const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
@@ -29,7 +31,7 @@ export const ReportDeathPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAnimalId || !symptomsBeforeDeath) {
-      alert('Please select animal and describe symptoms before death.');
+      alert(t('selectAnimalAndSymptomsBeforeDeath'));
       return;
     }
 
@@ -51,7 +53,7 @@ export const ReportDeathPage: React.FC = () => {
         setSuccess(true);
         return;
       }
-      alert('Failed to submit mortality report: ' + (err.response?.data?.error || err.message));
+      alert(t('failedToSubmitMortalityReport') + (err.response?.data?.error || err.message));
     } finally {
       setIsSubmitting(false);
     }
@@ -63,16 +65,18 @@ export const ReportDeathPage: React.FC = () => {
         <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-700 flex items-center justify-center text-3xl mx-auto">
           ⚠️
         </div>
-        <h2 className="text-xl font-bold text-slate-900 font-['Outfit']">Mortality Report Registered</h2>
+        <h2 className="text-xl font-bold text-slate-900 font-['Outfit']">
+          {t('mortalityRegisteredTitle')}
+        </h2>
         <p className="text-xs text-slate-600 leading-relaxed">
-          The animal has been marked as deceased. Due to epidemiological outbreak surveillance protocols, local veterinary authorities and the District Epidemiologist have been automatically alerted.
+          {t('mortalityRegisteredDesc')}
         </p>
         <div className="pt-3">
           <Link
             to="/farmer/livestock"
             className="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow inline-block"
           >
-            Return to Livestock Roster
+            {t('returnToRoster')}
           </Link>
         </div>
       </div>
@@ -86,7 +90,7 @@ export const ReportDeathPage: React.FC = () => {
         className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to My Livestock</span>
+        <span>{t('backToLivestock')}</span>
       </Link>
 
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-6">
@@ -96,10 +100,10 @@ export const ReportDeathPage: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-extrabold text-slate-900 font-['Outfit']">
-              Report Animal Death (मृत्यू नोंदवा)
+              {t('reportAnimalDeathTitle')}
             </h1>
             <p className="text-xs text-slate-500">
-              Mortality surveillance report feeds into early outbreak detection across Maharashtra
+              {t('reportAnimalDeathSubtitle')}
             </p>
           </div>
         </div>
@@ -107,14 +111,14 @@ export const ReportDeathPage: React.FC = () => {
         <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 leading-relaxed flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
           <span>
-            <strong>Official Surveillance Notice:</strong> Timely reporting of livestock mortalities helps state health authorities detect cluster outbreaks before they spread to other farmsteads.
+            {t('mortalityNotice')}
           </span>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 text-xs sm:text-sm">
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Select Deceased Animal *
+              {t('selectDeceasedAnimal')}
             </label>
             <select
               value={selectedAnimalId}
@@ -123,7 +127,7 @@ export const ReportDeathPage: React.FC = () => {
             >
               {animals.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.name || a.animalCode} — {a.species} ({a.breed}) • Tag: {a.identificationNumber || a.animalCode}
+                  {a.name || a.animalCode} — {getSpeciesLabel(a.species, language)} ({getBreedLabel(a.breed, language)}) • {t('earTagId')}: {a.identificationNumber || a.animalCode}
                 </option>
               ))}
             </select>
@@ -132,7 +136,7 @@ export const ReportDeathPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Date of Death *
+                {t('dateOfDeath')}
               </label>
               <input
                 type="date"
@@ -145,7 +149,7 @@ export const ReportDeathPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Other Sick Animals in Herd
+                {t('otherSickAnimalsInHerd')}
               </label>
               <input
                 type="number"
@@ -159,12 +163,12 @@ export const ReportDeathPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Symptoms Observed Prior to Death *
+              {t('symptomsBeforeDeath')}
             </label>
             <textarea
               rows={3}
               required
-              placeholder="e.g. Sudden severe fever, swelling in throat, loud breathing, refusal to eat for 2 days..."
+              placeholder={t('symptomsBeforeDeathPlaceholder')}
               value={symptomsBeforeDeath}
               onChange={(e) => setSymptomsBeforeDeath(e.target.value)}
               className="w-full text-xs p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-red-500"
@@ -173,11 +177,11 @@ export const ReportDeathPage: React.FC = () => {
 
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-              Suspected Cause
+              {t('suspectedCause')}
             </label>
             <input
               type="text"
-              placeholder="e.g. Suspected Ghatsarpa / Anthrax / High Fever"
+              placeholder={t('suspectedCausePlaceholder')}
               value={suspectedCause}
               onChange={(e) => setSuspectedCause(e.target.value)}
               className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
@@ -189,7 +193,7 @@ export const ReportDeathPage: React.FC = () => {
             disabled={isSubmitting}
             className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-sm shadow-lg shadow-red-600/20 transition-all disabled:opacity-50"
           >
-            {isSubmitting ? 'Registering Report...' : 'Submit Mortality Surveillance Report'}
+            {isSubmitting ? t('registeringReport') : t('submitMortalityReport')}
           </button>
         </form>
       </div>

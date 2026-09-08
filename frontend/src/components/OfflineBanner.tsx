@@ -36,7 +36,12 @@ export const OfflineBanner: React.FC = () => {
           ) : (
             <>
               <CheckCircle className="w-4 h-4 text-emerald-200" />
-              <span>Back Online! {pendingCount > 0 ? `${pendingCount} report(s) waiting to sync.` : 'All offline reports synchronized successfully.'}</span>
+              <span>
+                {t('backOnline')}{' '}
+                {pendingCount > 0
+                  ? `${pendingCount} ${t('reportsWaitingToSync')}`
+                  : t('allReportsSynced')}
+              </span>
             </>
           )}
         </div>
@@ -48,7 +53,7 @@ export const OfflineBanner: React.FC = () => {
             className="flex items-center gap-1.5 bg-white text-emerald-800 text-xs font-bold px-3 py-1 rounded shadow hover:bg-emerald-50 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            {isSyncing ? 'Syncing...' : `${t('syncPending')} (${pendingCount})`}
+            {isSyncing ? t('syncing') : `${t('syncPending')} (${pendingCount})`}
           </button>
         )}
       </div>

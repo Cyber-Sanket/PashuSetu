@@ -7,7 +7,7 @@ export const AboutPage: React.FC = () => {
       {/* Title */}
       <div className="text-center space-y-3">
         <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-          SIH Problem Statement: 6128
+          SIH Problem Statement: SIH26128
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 font-['Outfit']">
           About PashuSetu

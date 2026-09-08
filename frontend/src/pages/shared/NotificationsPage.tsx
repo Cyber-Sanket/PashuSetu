@@ -4,21 +4,26 @@ import { api } from '../../services/api';
 import { DataService } from '../../services/dataService';
 import { NotificationItem } from '../../types';
 import {
+  useLanguage,
+  getNotificationTitle,
+  getNotificationDescription,
+  getNotificationPriorityLabel,
+} from '../../context/LanguageContext';
+import {
   Bell,
   CheckCircle2,
   Check,
   AlertTriangle,
   Flame,
   ArrowRight,
-  Filter,
   Activity,
   Syringe,
   Megaphone,
   Clock,
-  ShieldAlert,
 } from 'lucide-react';
 
 export const NotificationsPage: React.FC = () => {
+  const { t, language } = useLanguage();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'ALL' | 'UNREAD' | 'CRITICAL' | 'CASES' | 'ADVISORIES'>('ALL');
@@ -72,7 +77,7 @@ export const NotificationsPage: React.FC = () => {
   const getPriorityInfo = (notif: NotificationItem) => {
     if (notif.type === 'OUTBREAK' || notif.title.includes('CRITICAL') || notif.title.includes('🚨')) {
       return {
-        level: 'CRITICAL',
+        level: t('priorityCritical'),
         color: 'bg-red-50 text-red-700 border-red-200 ring-1 ring-red-400/30',
         cardBorder: 'border-l-4 border-l-red-600 bg-red-50/20',
         icon: Flame,
@@ -80,7 +85,7 @@ export const NotificationsPage: React.FC = () => {
     }
     if (notif.title.includes('High') || notif.type === 'ALERT') {
       return {
-        level: 'HIGH RISK',
+        level: t('priorityHigh'),
         color: 'bg-amber-50 text-amber-800 border-amber-200',
         cardBorder: 'border-l-4 border-l-amber-500 bg-amber-50/20',
         icon: AlertTriangle,
@@ -88,7 +93,7 @@ export const NotificationsPage: React.FC = () => {
     }
     if (notif.type === 'VACCINE') {
       return {
-        level: 'VACCINATION',
+        level: t('priorityVaccination'),
         color: 'bg-emerald-50 text-emerald-800 border-emerald-200',
         cardBorder: 'border-l-4 border-l-emerald-500',
         icon: Syringe,
@@ -96,14 +101,14 @@ export const NotificationsPage: React.FC = () => {
     }
     if (notif.type === 'ADVISORY') {
       return {
-        level: 'ADVISORY',
+        level: t('priorityAdvisory'),
         color: 'bg-purple-50 text-purple-800 border-purple-200',
         cardBorder: 'border-l-4 border-l-purple-500',
         icon: Megaphone,
       };
     }
     return {
-      level: 'UPDATE',
+      level: t('priorityUpdate'),
       color: 'bg-blue-50 text-blue-800 border-blue-200',
       cardBorder: 'border-l-4 border-l-blue-500',
       icon: Activity,
@@ -133,16 +138,16 @@ export const NotificationsPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-              Notifications & Early Warning Center
+              {t('notificationsCenterTitle')}
             </h1>
             {unreadCount > 0 && (
               <span className="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-red-100 text-red-800 border border-red-200 animate-pulse">
-                {unreadCount} Unread
+                {unreadCount} {t('unread')}
               </span>
             )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time surveillance updates, epidemiological cluster alerts, and veterinary case notifications
+            {t('notificationsCenterSubtitle')}
           </p>
         </div>
 
@@ -152,7 +157,7 @@ export const NotificationsPage: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 shadow-sm transition-colors self-start sm:self-auto"
           >
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Mark All as Read</span>
+            <span>{t('markAllRead')}</span>
           </button>
         )}
       </div>
@@ -160,23 +165,23 @@ export const NotificationsPage: React.FC = () => {
       {/* Filter Tabs */}
       <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 pb-3">
         {[
-          { id: 'ALL', label: 'All Notifications', count: notifications.length },
-          { id: 'UNREAD', label: 'Unread', count: unreadCount },
+          { id: 'ALL', label: t('allNotifications'), count: notifications.length },
+          { id: 'UNREAD', label: t('unread'), count: unreadCount },
           {
             id: 'CRITICAL',
-            label: 'Outbreaks & High Risk',
+            label: t('outbreaksAndHighRisk'),
             count: notifications.filter(
               (n) => n.type === 'OUTBREAK' || n.title.includes('CRITICAL') || n.title.includes('🚨') || n.title.includes('High')
             ).length,
           },
           {
             id: 'CASES',
-            label: 'Cases & Vaccines',
+            label: t('casesAndVaccines'),
             count: notifications.filter((n) => n.type === 'CASE_UPDATE' || n.type === 'VACCINE').length,
           },
           {
             id: 'ADVISORIES',
-            label: 'State Advisories',
+            label: t('stateAdvisories'),
             count: notifications.filter((n) => n.type === 'ADVISORY').length,
           },
         ].map((tab) => (
@@ -205,17 +210,17 @@ export const NotificationsPage: React.FC = () => {
 
       {/* Notification List */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-500">Loading notifications center...</div>
+        <div className="p-12 text-center text-xs text-slate-500">{t('loadingNotifications')}</div>
       ) : filteredNotifications.length === 0 ? (
         <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-12 text-center space-y-3">
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
             <Bell className="w-6 h-6" />
           </div>
-          <p className="text-sm font-bold text-slate-700">No notifications found in this view.</p>
+          <p className="text-sm font-bold text-slate-700">{t('noNotificationsInView')}</p>
           <p className="text-xs text-slate-500">
             {activeTab === 'UNREAD'
-              ? 'You have caught up with all latest early warning messages!'
-              : 'New outbreak reports, case assignments, and health updates will appear here automatically.'}
+              ? t('allCaughtUp')
+              : t('newAlertsAppearHere')}
           </p>
         </div>
       ) : (
@@ -249,12 +254,15 @@ export const NotificationsPage: React.FC = () => {
                       <span className="text-[11px] text-slate-500 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400" />
                         <span>
-                          {new Date(notif.createdAt).toLocaleDateString([], {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}{' '}
-                          at{' '}
+                          {new Date(notif.createdAt).toLocaleDateString(
+                            language === 'mr' ? 'mr-IN' : language === 'hi' ? 'hi-IN' : [],
+                            {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            }
+                          )}{' '}
+                          {language === 'mr' ? 'रोजी' : language === 'hi' ? 'को' : 'at'}{' '}
                           {new Date(notif.createdAt).toLocaleTimeString([], {
                             hour: '2-digit',
                             minute: '2-digit',
@@ -269,11 +277,11 @@ export const NotificationsPage: React.FC = () => {
                         !notif.isRead ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'
                       }`}
                     >
-                      {notif.title}
+                      {getNotificationTitle(notif, language)}
                     </h3>
 
                     <p className="text-xs text-slate-600 leading-relaxed max-w-3xl">
-                      {notif.message}
+                      {getNotificationDescription(notif, language)}
                     </p>
                   </div>
 
@@ -283,10 +291,10 @@ export const NotificationsPage: React.FC = () => {
                       <button
                         onClick={() => markSingleRead(notif.id)}
                         className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-emerald-700 text-xs font-semibold transition-colors flex items-center gap-1"
-                        title="Mark as Read"
+                        title={t('markRead')}
                       >
                         <Check className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Mark Read</span>
+                        <span className="hidden sm:inline">{t('markRead')}</span>
                       </button>
                     )}
 
@@ -295,7 +303,7 @@ export const NotificationsPage: React.FC = () => {
                         onClick={() => handleOpenNotification(notif)}
                         className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow transition-colors flex items-center gap-1.5 group"
                       >
-                        <span>Open Details</span>
+                        <span>{t('openDetails')}</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                       </button>
                     )}

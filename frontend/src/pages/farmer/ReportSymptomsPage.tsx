@@ -5,17 +5,13 @@ import { DataService } from '../../services/dataService';
 import { FALLBACK_REPORTS } from '../../services/fallbackData';
 import { Animal } from '../../types';
 import { useOffline } from '../../context/OfflineContext';
+import { useLanguage, getSpeciesLabel, getSymptomLabel, getBreedLabel, getDiseaseCategoryLabel } from '../../context/LanguageContext';
 import { RiskBadge } from '../../components/RiskBadge';
 import { PhotoUpload } from '../../components/PhotoUpload';
 import {
   Stethoscope,
-  AlertTriangle,
-  Upload,
   MapPin,
   CheckCircle2,
-  Flame,
-  ShieldCheck,
-  WifiOff,
   Sparkles,
 } from 'lucide-react';
 
@@ -44,6 +40,7 @@ export const ReportSymptomsPage: React.FC = () => {
   const preSelectedAnimalId = searchParams.get('animalId');
   const navigate = useNavigate();
   const { isOnline, queueOfflineReport } = useOffline();
+  const { t, language } = useLanguage();
 
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [selectedAnimalId, setSelectedAnimalId] = useState<string>(preSelectedAnimalId || '');
@@ -126,27 +123,27 @@ export const ReportSymptomsPage: React.FC = () => {
     else if (score <= 80) riskLevel = 'HIGH';
     else riskLevel = 'CRITICAL';
 
-    let matchedDisease = 'General Systemic Disturbance';
+    let matchedDisease = language === 'mr' ? 'सामान्य शारीरिक अस्वस्थता' : language === 'hi' ? 'सामान्य शारीरिक विकार' : 'General Systemic Disturbance';
     if (lower.some((s) => s.includes('salivation') || s.includes('mouth') || s.includes('blister'))) {
-      matchedDisease = 'Foot and Mouth Disease (FMD) / लाळ खुरकूत';
+      matchedDisease = language === 'mr' ? 'लाळ खुरकूत रोग (FMD)' : language === 'hi' ? 'खुरपका और मुंहपका रोग (FMD)' : 'Foot and Mouth Disease (FMD)';
     } else if (lower.some((s) => s.includes('lesion'))) {
-      matchedDisease = 'Lumpy Skin Disease (LSD) / लंपी त्वचा रोग';
+      matchedDisease = language === 'mr' ? 'लंपी त्वचा रोग (LSD)' : language === 'hi' ? 'लम्पी त्वचा रोग (LSD)' : 'Lumpy Skin Disease (LSD)';
     } else if (lower.some((s) => s.includes('breathing') && s.includes('swelling'))) {
-      matchedDisease = 'Haemorrhagic Septicaemia (HS) / घटसर्प';
+      matchedDisease = language === 'mr' ? 'घटसर्प रोग (HS)' : language === 'hi' ? 'गलघोंटू रोग (HS)' : 'Haemorrhagic Septicaemia (HS)';
     }
 
     return { score, riskLevel, matchedDisease };
-  }, [selectedSymptoms, temperatureF, severity, appetiteStatus, milkProductionChange, durationDays]);
+  }, [selectedSymptoms, temperatureF, severity, appetiteStatus, milkProductionChange, durationDays, language]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAnimalId || selectedSymptoms.length === 0) {
-      alert('Please select an animal and at least one symptom.');
+      alert(t('selectAnimalAndSymptomAlert'));
       return;
     }
 
     if (selectedSymptoms.includes('Other') && !customSymptom.trim()) {
-      alert('Please describe the custom symptoms in the "Specify Custom Symptoms" field.');
+      alert(t('specifyCustomSymptomAlert'));
       return;
     }
 
@@ -180,7 +177,7 @@ export const ReportSymptomsPage: React.FC = () => {
     if (!isOnline) {
       // Offline submission
       queueOfflineReport(reportPayload);
-      alert('You are currently offline. This report has been saved locally and will automatically synchronize once internet returns.');
+      alert(t('offlineReportSavedNotice'));
       navigate('/farmer/reports');
       return;
     }
@@ -221,7 +218,7 @@ export const ReportSymptomsPage: React.FC = () => {
             riskLevel: livePreview.riskLevel,
             possibleCategory: livePreview.matchedDisease,
             riskFactors: JSON.stringify(['Automated offline epidemiological rule evaluation (+25)']),
-            recommendedAction: 'Keep animal isolated away from the herd. Contact local Veterinary Officer.',
+            recommendedAction: language === 'mr' ? 'आजारी जनावराला तात्काळ कळपापासून वेगळे ठेवा. स्थानिक पशुवैद्यकीय अधिकाऱ्यांशी संपर्क साधा.' : language === 'hi' ? 'पशु को तुरंत झुंड से अलग रखें। स्थानीय पशु चिकित्सक से संपर्क करें।' : 'Keep animal isolated away from the herd. Contact local Veterinary Officer.',
             isDecisionSupportOnly: true,
             engineVersion: 'v1.0-rule-based',
             createdAt: new Date().toISOString(),
@@ -231,7 +228,7 @@ export const ReportSymptomsPage: React.FC = () => {
         setSubmissionSuccess(fallbackSuccess);
         return;
       }
-      alert('Failed to submit report: ' + (err.response?.data?.error || err.message));
+      alert(t('failedToSubmitReport') + (err.response?.data?.error || err.message));
     } finally {
       setIsSubmitting(false);
     }
@@ -247,10 +244,10 @@ export const ReportSymptomsPage: React.FC = () => {
 
           <div className="space-y-1">
             <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-              Health Report Filed Successfully!
+              {t('healthReportFiledSuccess')}
             </h1>
             <p className="text-xs text-slate-500">
-              Report Code: <strong className="text-slate-800">{submissionSuccess.report.reportCode}</strong>
+              {t('reportCode')}: <strong className="text-slate-800">{submissionSuccess.report.reportCode}</strong>
             </p>
           </div>
 
@@ -258,7 +255,7 @@ export const ReportSymptomsPage: React.FC = () => {
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 text-left space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Epidemiological Risk Rating
+                {t('epidemiologicalRisk')}
               </span>
               <RiskBadge
                 level={submissionSuccess.riskAssessment.riskLevel}
@@ -268,20 +265,20 @@ export const ReportSymptomsPage: React.FC = () => {
             </div>
 
             <div>
-              <p className="text-xs text-slate-500">Suspected Disease Category:</p>
+              <p className="text-xs text-slate-500">{t('suspectedDiseaseCategory')}</p>
               <p className="font-bold text-slate-900 text-base">
-                {submissionSuccess.riskAssessment.possibleCategory}
+                {getDiseaseCategoryLabel(submissionSuccess.riskAssessment.possibleCategory, language)}
               </p>
             </div>
 
             <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
-              <p className="font-bold mb-1">Recommended Immediate Action:</p>
+              <p className="font-bold mb-1">{t('recommendedImmediateAction')}</p>
               <p>{submissionSuccess.riskAssessment.recommendedAction}</p>
             </div>
 
             <p className="text-[11px] text-slate-500 italic pt-1">
               {submissionSuccess.riskAssessment.isDecisionSupportOnly && (
-                <span>⚡ Automated Risk Assessment — Decision Support. Final diagnosis must be confirmed by a certified veterinarian.</span>
+                <span>⚡ {t('decisionSupportDisclaimerText')}</span>
               )}
             </p>
           </div>
@@ -291,14 +288,14 @@ export const ReportSymptomsPage: React.FC = () => {
               to="/farmer/reports"
               className="bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow transition-colors"
             >
-              Track Case in My Reports
+              {t('trackCaseInReports')}
             </Link>
 
             <Link
               to="/farmer/nearby-vets"
               className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs px-5 py-2.5 rounded-xl transition-colors"
             >
-              Find Nearest Veterinary Clinic
+              {t('findNearestClinic')}
             </Link>
           </div>
         </div>
@@ -311,10 +308,10 @@ export const ReportSymptomsPage: React.FC = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-          Report Animal Symptoms / आजाराची लक्षणे नोंदवा
+          {t('reportSymptomsTitle')}
         </h1>
         <p className="text-xs text-slate-500">
-          Early detection surveillance tool for livestock owners across Maharashtra.
+          {t('reportSymptomsSubtitle')}
         </p>
       </div>
 
@@ -324,13 +321,13 @@ export const ReportSymptomsPage: React.FC = () => {
           {/* 1. Select Animal */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-              1. Select Affected Animal *
+              {t('selectAffectedAnimal')}
             </label>
             {animals.length === 0 ? (
               <p className="text-xs text-amber-600 font-medium">
-                No livestock registered yet.{' '}
+                {t('noLivestockRegisteredAddFirst')}{' '}
                 <Link to="/farmer/livestock" className="underline font-bold">
-                  Add an animal first.
+                  {t('addAnimal')}
                 </Link>
               </p>
             ) : (
@@ -341,7 +338,7 @@ export const ReportSymptomsPage: React.FC = () => {
               >
                 {animals.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.name || a.animalCode} — {a.species} ({a.breed}) • Tag: {a.identificationNumber || a.animalCode}
+                    {a.name || a.animalCode} — {getSpeciesLabel(a.species, language)} ({getBreedLabel(a.breed, language)}) • {t('earTagId')}: {a.identificationNumber || a.animalCode}
                   </option>
                 ))}
               </select>
@@ -352,16 +349,18 @@ export const ReportSymptomsPage: React.FC = () => {
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-                2. Select Observed Symptoms (लक्षणे) *
+                {t('selectObservedSymptoms')}
               </label>
               <span className="text-[11px] text-slate-500 font-medium">
-                {selectedSymptoms.length} selected
+                {selectedSymptoms.length} {t('symptomsSelected')}
               </span>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {SYMPTOM_OPTIONS.map((sym) => {
                 const isChecked = selectedSymptoms.includes(sym);
+                const displayLabel = getSymptomLabel(sym, language);
+
                 return (
                   <button
                     key={sym}
@@ -376,7 +375,7 @@ export const ReportSymptomsPage: React.FC = () => {
                     }`}
                   >
                     <span className="truncate pr-1">
-                      {sym === 'Other' ? 'Other / इतर लक्षणे' : sym}
+                      {displayLabel}
                     </span>
                     {isChecked && (
                       <CheckCircle2
@@ -395,22 +394,22 @@ export const ReportSymptomsPage: React.FC = () => {
               <div className="mt-3 p-4 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-2 animate-fadeIn">
                 <div className="flex items-center justify-between">
                   <label className="block text-xs font-bold text-purple-900 uppercase tracking-wide">
-                    Specify Custom Symptoms / इतर लक्षणे नमूद करा *
+                    {t('specifyCustomSymptoms')}
                   </label>
                   <span className="text-[11px] text-purple-700 font-semibold bg-purple-100 px-2 py-0.5 rounded">
-                    Sent directly to Attending Vet
+                    {t('sentDirectlyToVet')}
                   </span>
                 </div>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Swollen brisket, rapid ear shaking, bleeding from nostrils, limping on rear left hoof..."
+                  placeholder={t('customSymptomsPlaceholder')}
                   value={customSymptom}
                   onChange={(e) => setCustomSymptom(e.target.value)}
                   className="w-full text-xs px-3.5 py-2.5 bg-white border border-purple-300 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium text-slate-800"
                 />
                 <p className="text-[10px] text-purple-700">
-                  Please describe any unique symptoms, behavioral changes, or visible signs not covered in the standard checklist above.
+                  {t('customSymptomsHelp')}
                 </p>
               </div>
             )}
@@ -419,12 +418,12 @@ export const ReportSymptomsPage: React.FC = () => {
           {/* 3. Vitals & Duration */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-              3. Clinical Vitals & Onset
+              {t('clinicalVitalsAndOnset')}
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="block font-semibold text-slate-600 mb-1">Duration (Days)</label>
+                <label className="block font-semibold text-slate-600 mb-1">{t('durationDaysLabel')}</label>
                 <input
                   type="number"
                   min="1"
@@ -436,24 +435,24 @@ export const ReportSymptomsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-600 mb-1">Severity Reported</label>
+                <label className="block font-semibold text-slate-600 mb-1">{t('severityReported')}</label>
                 <select
                   value={severity}
                   onChange={(e) => setSeverity(e.target.value as any)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-medium"
                 >
-                  <option value="Mild">Mild (सौम्य)</option>
-                  <option value="Moderate">Moderate (मध्यम)</option>
-                  <option value="Severe">Severe (गंभीर)</option>
+                  <option value="Mild">{t('mild')}</option>
+                  <option value="Moderate">{t('moderate')}</option>
+                  <option value="Severe">{t('severe')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-600 mb-1">Body Temp (°F)</label>
+                <label className="block font-semibold text-slate-600 mb-1">{t('bodyTempF')}</label>
                 <input
                   type="number"
                   step="0.1"
-                  placeholder="e.g. 103.5"
+                  placeholder={language === 'mr' ? 'उदा. १०३.५' : 'e.g. 103.5'}
                   value={temperatureF}
                   onChange={(e) => setTemperatureF(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
@@ -463,28 +462,28 @@ export const ReportSymptomsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-2 border-t border-slate-100">
               <div>
-                <label className="block font-semibold text-slate-600 mb-1">Appetite (चारा खाणे)</label>
+                <label className="block font-semibold text-slate-600 mb-1">{t('appetiteStatus')}</label>
                 <select
                   value={appetiteStatus}
                   onChange={(e) => setAppetiteStatus(e.target.value as any)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-medium"
                 >
-                  <option value="Normal">Normal (नेहमीप्रमाणे)</option>
-                  <option value="Reduced">Reduced (कमी खात आहे)</option>
-                  <option value="None">None (अन्न पूर्णपणे बंद)</option>
+                  <option value="Normal">{t('normal')}</option>
+                  <option value="Reduced">{t('reduced')}</option>
+                  <option value="None">{t('noneAppetite')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-600 mb-1">Milk Yield Impact</label>
+                <label className="block font-semibold text-slate-600 mb-1">{t('milkYieldImpact')}</label>
                 <select
                   value={milkProductionChange}
                   onChange={(e) => setMilkProductionChange(e.target.value as any)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-medium"
                 >
-                  <option value="None">None / Not Lactating</option>
-                  <option value="Slight Drop">Slight Drop (थोडी घट)</option>
-                  <option value="Severe Drop">Severe Drop (&gt;50% घट)</option>
+                  <option value="None">{t('notLactating')}</option>
+                  <option value="Slight Drop">{t('slightDrop')}</option>
+                  <option value="Severe Drop">{t('severeDrop')}</option>
                 </select>
               </div>
             </div>
@@ -493,11 +492,11 @@ export const ReportSymptomsPage: React.FC = () => {
           {/* 4. Description & Photo */}
           <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
-              4. Additional Notes & Clinical Photographic Evidence
+              {t('additionalNotesAndPhoto')}
             </label>
             <textarea
               rows={3}
-              placeholder="Describe physical behavior, blisters, discharge, or whether neighboring animals are sick..."
+              placeholder={t('describePhysicalBehaviorPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="w-full text-xs p-3 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
@@ -506,8 +505,8 @@ export const ReportSymptomsPage: React.FC = () => {
             <PhotoUpload
               value={photoUrl}
               onChange={(url) => setPhotoUrl(url)}
-              label="Clinical Lesion / Symptoms Photo (लक्षणे किंवा जखमेचा फोटो)"
-              helperText="Capture or upload photo of visible lesions, ulcers, eye discharge, or affected limbs (JPEG, PNG, WebP ≤ 5MB)"
+              label={t('symptomsPhotoLabel')}
+              helperText={t('symptomsPhotoHelper')}
             />
           </div>
         </div>
@@ -518,24 +517,24 @@ export const ReportSymptomsPage: React.FC = () => {
             <div className="flex items-center gap-2 text-amber-400">
               <Sparkles className="w-4 h-4" />
               <h3 className="font-bold text-xs uppercase tracking-wider">
-                Automated Risk Engine Preview
+                {t('automatedRiskEnginePreview')}
               </h3>
             </div>
 
             <div className="p-4 bg-slate-800/80 rounded-2xl border border-slate-700 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-300">Epidemiological Risk:</span>
+                <span className="text-xs text-slate-300">{t('epidemiologicalRisk')}</span>
                 <RiskBadge level={livePreview.riskLevel} score={livePreview.score} />
               </div>
 
               <div>
-                <p className="text-[11px] text-slate-400">Suspected Pattern Match:</p>
+                <p className="text-[11px] text-slate-400">{t('suspectedPatternMatch')}</p>
                 <p className="font-bold text-sm text-white">{livePreview.matchedDisease}</p>
               </div>
 
               {/* Legal disclaimer */}
               <div className="p-2.5 bg-slate-900/90 rounded-xl border border-slate-700/80 text-[11px] text-slate-300 leading-relaxed">
-                ⚡ <strong>Decision Support Disclaimer:</strong> This preview is an automated epidemiological triage indicator and does not constitute a certified veterinary diagnosis.
+                ⚡ <strong>{t('riskAssessment')}:</strong> {t('decisionSupportDisclaimerText')}
               </div>
             </div>
 
@@ -543,7 +542,7 @@ export const ReportSymptomsPage: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <MapPin className="w-3.5 h-3.5 text-blue-400" />
               <span>
-                GPS: {latitude ? `${latitude.toFixed(4)}, ${longitude?.toFixed(4)}` : 'Detecting GPS...'}
+                GPS: {latitude ? `${latitude.toFixed(4)}, ${longitude?.toFixed(4)}` : t('detectingGps')}
               </span>
             </div>
 
@@ -554,12 +553,12 @@ export const ReportSymptomsPage: React.FC = () => {
               className="w-full py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-transform hover:scale-105 disabled:opacity-50"
             >
               <Stethoscope className="w-4 h-4 text-slate-950" />
-              <span>{isSubmitting ? 'Processing Assessment...' : 'Submit Health Report'}</span>
+              <span>{isSubmitting ? t('processingAssessment') : t('submitHealthReport')}</span>
             </button>
 
             {!isOnline && (
               <p className="text-[11px] text-amber-300 text-center font-medium">
-                Offline Mode Active: Report will queue locally.
+                {t('offlineQueueNotice')}
               </p>
             )}
           </div>

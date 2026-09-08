@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const role = user.role;
 
   const farmerLinks = [
-    { to: '/farmer', label: 'Dashboard Overview', icon: LayoutDashboard, end: true },
+    { to: '/farmer', label: t('dashboardOverview'), icon: LayoutDashboard, end: true },
     { to: '/farmer/livestock', label: t('myLivestock'), icon: HeartPulse },
     { to: '/farmer/report-symptoms', label: t('reportSymptoms'), icon: Stethoscope, highlight: true },
     { to: '/farmer/report-death', label: t('reportDeath'), icon: Skull },
@@ -45,41 +45,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { to: '/farmer/treatments', label: t('treatments'), icon: Pill },
     { to: '/farmer/nearby-vets', label: t('nearbyVets'), icon: MapPin },
     { to: '/farmer/alerts', label: t('alerts'), icon: AlertTriangle },
-    { to: '/farmer/notifications', label: 'Notifications & Alerts', icon: Bell },
+    { to: '/farmer/notifications', label: t('notificationsAlerts'), icon: Bell },
   ];
 
   const vetLinks = [
-    { to: '/veterinarian', label: 'Caseload Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/veterinarian/cases', label: 'Reported Cases Queue', icon: HeartPulse, highlight: true },
-    { to: '/veterinarian/map', label: 'District Disease Map', icon: Map },
-    { to: '/veterinarian/samples', label: 'Laboratory Samples', icon: Microscope },
-    { to: '/veterinarian/treatments', label: 'Prescriptions Issued', icon: Pill },
-    { to: '/veterinarian/notifications', label: 'Notifications & Alerts', icon: Bell },
+    { to: '/veterinarian', label: t('caseloadDashboard'), icon: LayoutDashboard, end: true },
+    { to: '/veterinarian/cases', label: t('reportedCasesQueue'), icon: HeartPulse, highlight: true },
+    { to: '/veterinarian/map', label: t('districtDiseaseMap'), icon: Map },
+    { to: '/veterinarian/samples', label: t('labSamples'), icon: Microscope },
+    { to: '/veterinarian/treatments', label: t('prescriptionsIssued'), icon: Pill },
+    { to: '/veterinarian/notifications', label: t('notificationsAlerts'), icon: Bell },
   ];
 
   const govtLinks = [
-    { to: '/government', label: 'Statewide Overview', icon: LayoutDashboard, end: true },
-    { to: '/government/map', label: 'GIS Disease Map', icon: Map, highlight: true },
-    { to: '/government/outbreaks', label: 'Outbreak Detection', icon: AlertTriangle },
-    { to: '/government/analytics', label: 'Disease Analytics', icon: BarChart3 },
-    { to: '/government/vaccination', label: 'Vaccination Monitoring', icon: Syringe },
-    { to: '/government/response', label: 'Veterinary Response', icon: Users },
-    { to: '/government/reports', label: 'Surveillance Reports', icon: Download },
-    { to: '/government/advisories', label: 'Broadcast Advisory', icon: Megaphone },
-    { to: '/government/notifications', label: 'Notifications & Alerts', icon: Bell },
+    { to: '/government', label: t('statewideOverview'), icon: LayoutDashboard, end: true },
+    { to: '/government/map', label: t('gisDiseaseMap'), icon: Map, highlight: true },
+    { to: '/government/outbreaks', label: t('outbreakDetection'), icon: AlertTriangle },
+    { to: '/government/analytics', label: t('diseaseAnalytics'), icon: BarChart3 },
+    { to: '/government/vaccination', label: t('vaccinationMonitoring'), icon: Syringe },
+    { to: '/government/response', label: t('veterinaryResponse'), icon: Users },
+    { to: '/government/reports', label: t('surveillanceReports'), icon: Download },
+    { to: '/government/advisories', label: t('broadcastAdvisory'), icon: Megaphone },
+    { to: '/government/notifications', label: t('notificationsAlerts'), icon: Bell },
   ];
 
   let links = farmerLinks;
-  let roleTitle = 'Farmer Workspace';
+  let roleTitle = t('farmerWorkspace');
   let badgeColor = 'bg-emerald-800/60 text-emerald-300 border-emerald-600/40';
 
   if (role === 'VETERINARIAN') {
     links = vetLinks;
-    roleTitle = 'Veterinary Portal';
+    roleTitle = t('veterinaryPortal');
     badgeColor = 'bg-blue-800/60 text-blue-300 border-blue-600/40';
   } else if (role === 'GOVERNMENT') {
     links = govtLinks;
-    roleTitle = 'State Health Command';
+    roleTitle = t('stateHealthCommand');
     badgeColor = 'bg-indigo-800/60 text-indigo-300 border-indigo-600/40';
   }
 
@@ -102,12 +102,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         {/* Role Header Banner */}
         <div className="p-4 border-b border-slate-800 bg-slate-950/40">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-            Current Portal
+            {t('currentPortal')}
           </p>
           <div className="flex items-center justify-between">
             <span className="font-bold text-white text-sm">{roleTitle}</span>
             <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded border ${badgeColor}`}>
-              {role}
+              {role === 'FARMER' ? t('farmer') : role === 'VETERINARIAN' ? t('veterinarian') : t('government')}
             </span>
           </div>
         </div>
@@ -144,8 +144,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <Building2 className="w-3.5 h-3.5 text-blue-400 shrink-0" />
             <div className="truncate">
-              <p className="font-semibold text-slate-300 truncate">Govt of Maharashtra</p>
-              <p className="text-[10px] text-slate-500">Animal Husbandry Dept</p>
+              <p className="font-semibold text-slate-300 truncate">{t('govtOfMaharashtra')}</p>
+              <p className="text-[10px] text-slate-500">{t('animalHusbandryDept')}</p>
             </div>
           </div>
         </div>

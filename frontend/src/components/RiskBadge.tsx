@@ -1,5 +1,6 @@
 import React from 'react';
 import { RiskLevel } from '../types';
+import { useLanguage } from '../context/LanguageContext';
 import { ShieldCheck, AlertTriangle, AlertOctagon, Flame } from 'lucide-react';
 
 interface RiskBadgeProps {
@@ -15,24 +16,25 @@ export const RiskBadge: React.FC<RiskBadgeProps> = ({
   showIcon = true,
   size = 'md',
 }) => {
+  const { t } = useLanguage();
   const normLevel = (level || 'LOW').toUpperCase();
 
   let colorClasses = 'bg-emerald-50 text-emerald-700 border-emerald-300';
   let Icon = ShieldCheck;
-  let label = 'Low Risk';
+  let label = t('riskLow');
 
   if (normLevel === 'MEDIUM') {
     colorClasses = 'bg-amber-50 text-amber-800 border-amber-300';
     Icon = AlertTriangle;
-    label = 'Medium Risk';
+    label = t('riskMedium');
   } else if (normLevel === 'HIGH') {
     colorClasses = 'bg-orange-50 text-orange-800 border-orange-300';
     Icon = AlertOctagon;
-    label = 'High Risk';
+    label = t('riskHigh');
   } else if (normLevel === 'CRITICAL') {
     colorClasses = 'bg-red-50 text-red-800 border-red-400 animate-pulse';
     Icon = Flame;
-    label = 'Critical Outbreak Risk';
+    label = t('riskCritical');
   }
 
   const sizeClasses = {

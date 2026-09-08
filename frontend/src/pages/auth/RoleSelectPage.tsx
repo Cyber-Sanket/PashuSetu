@@ -1,22 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
-import { ArrowRight, UserCheck, Stethoscope, Building2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { PASHUSETU_LOGO } from '../../constants/assets';
 
 export const RoleSelectPage: React.FC = () => {
   const { t } = useLanguage();
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
+        <div className="flex justify-center mb-1">
+          <img
+            src={PASHUSETU_LOGO}
+            alt="PashuSetu Logo"
+            className="w-24 h-24 sm:w-28 sm:h-28 object-contain hover:scale-105 transition-transform"
+          />
+        </div>
         <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
-          Role-Based Access Control
+          {t('roleBasedAccess')}
         </span>
         <h1 className="text-3xl font-extrabold text-slate-900 font-['Outfit']">
-          Select Your Portal / तुमची भूमिका निवडा
+          {t('roleSelectTitle')}
         </h1>
         <p className="text-sm text-slate-600">
-          Choose your stakeholder role to securely sign in to the appropriate surveillance dashboard.
+          {t('roleSelectSubtitle')}
         </p>
       </div>
 
@@ -36,7 +44,7 @@ export const RoleSelectPage: React.FC = () => {
             to="/auth/farmer-login"
             className="mt-6 w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition-colors"
           >
-            <span>Continue as Farmer</span>
+            <span>{t('continueAsFarmer')}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -56,7 +64,7 @@ export const RoleSelectPage: React.FC = () => {
             to="/auth/vet-login"
             className="mt-6 w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition-colors"
           >
-            <span>Continue as Veterinarian</span>
+            <span>{t('continueAsVet')}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
@@ -76,7 +84,7 @@ export const RoleSelectPage: React.FC = () => {
             to="/auth/govt-login"
             className="mt-6 w-full py-3 px-4 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition-colors"
           >
-            <span>Continue as Government</span>
+            <span>{t('continueAsGovt')}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

@@ -17,6 +17,7 @@ import {
   FileCheck,
   Zap,
 } from 'lucide-react';
+import { PASHUSETU_LOGO } from '../../constants/assets';
 
 export const HomePage: React.FC = () => {
   const { t } = useLanguage();
@@ -44,7 +45,16 @@ export const HomePage: React.FC = () => {
           {/* SIH & Department Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-900/60 border border-blue-500/30 text-xs font-semibold text-blue-200">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            <span>Government of Maharashtra • SIH Problem Statement 6128</span>
+            <span>Government of Maharashtra • SIH Problem Statement SIH26128</span>
+          </div>
+
+          {/* Official Logo */}
+          <div className="flex justify-center pt-2">
+            <img
+              src={PASHUSETU_LOGO}
+              alt="PashuSetu Logo"
+              className="w-28 h-28 sm:w-36 sm:h-36 object-contain hover:scale-105 transition-transform duration-300"
+            />
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight font-['Outfit'] leading-tight">

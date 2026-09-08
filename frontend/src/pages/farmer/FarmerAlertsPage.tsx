@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { api } from '../../services/api';
 import { DataService } from '../../services/dataService';
 import { Advisory } from '../../types';
-import { useLanguage } from '../../context/LanguageContext';
-import { AlertTriangle, Megaphone, Calendar, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { useLanguage, getDistrictLabel } from '../../context/LanguageContext';
 
 export const FarmerAlertsPage: React.FC = () => {
   const [advisories, setAdvisories] = useState<Advisory[]>([]);
   const [loading, setLoading] = useState(true);
-  const { language } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     DataService.getAdvisories()
@@ -17,22 +15,24 @@ export const FarmerAlertsPage: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
+  const alertWord = language === 'mr' ? 'इशारा' : language === 'hi' ? 'अलर्ट' : 'ALERT';
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-          Alerts & Advisories / इशारे व सूचना
+          {t('alertsAndAdvisoriesTitle')}
         </h1>
         <p className="text-xs text-slate-500">
-          Official disease outbreak warnings, biosecurity protocols, and seasonal vaccination circulars
+          {t('alertsAndAdvisoriesSubtitle')}
         </p>
       </div>
 
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-500">Loading alerts and advisories...</div>
+        <div className="p-12 text-center text-xs text-slate-500">{t('loadingAlerts')}</div>
       ) : advisories.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center text-xs text-slate-500 border border-slate-200">
-          No active outbreak advisories in your district.
+          {t('noActiveAdvisories')}
         </div>
       ) : (
         <div className="space-y-4">
@@ -40,6 +40,7 @@ export const FarmerAlertsPage: React.FC = () => {
             const title = language === 'mr' ? adv.titleMr : language === 'hi' ? adv.titleHi : adv.titleEn;
             const content = language === 'mr' ? adv.contentMr : language === 'hi' ? adv.contentHi : adv.contentEn;
             const isUrgent = adv.severity === 'URGENT';
+            const severityLabel = isUrgent ? t('priorityCritical') : t('priorityHigh');
 
             return (
               <div
@@ -57,15 +58,15 @@ export const FarmerAlertsPage: React.FC = () => {
                         isUrgent ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-800'
                       }`}
                     >
-                      {adv.severity} ALERT
+                      {severityLabel} {alertWord}
                     </span>
                     <span className="text-xs font-semibold text-slate-500">
-                      Target: {adv.targetDistrict} District
+                      {t('targetDistrict')}: {getDistrictLabel(adv.targetDistrict, language)}
                     </span>
                   </div>
 
                   <span className="text-[11px] text-slate-400">
-                    Issued on {new Date(adv.createdAt).toLocaleDateString()}
+                    {t('issuedOn')} {new Date(adv.createdAt).toLocaleDateString()}
                   </span>
                 </div>
 
@@ -78,7 +79,7 @@ export const FarmerAlertsPage: React.FC = () => {
                 </p>
 
                 <p className="text-[11px] text-slate-400 border-t border-slate-200/60 pt-3 mt-4">
-                  Authorized Authority: {adv.issuedBy}
+                  {t('authorizedAuthority')} {adv.issuedBy}
                 </p>
               </div>
             );

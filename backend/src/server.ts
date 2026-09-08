@@ -76,7 +76,7 @@ app.get('/api/health', (req: Request, res: Response) => {
     version: '1.0.0',
     environment: ENV.NODE_ENV,
     timestamp: new Date().toISOString(),
-    sihProblemStatement: '6128',
+    sihProblemStatement: 'SIH26128',
     department: 'Department of Animal Husbandry, Government of Maharashtra',
   });
 });

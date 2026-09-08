@@ -3,13 +3,13 @@
 ## Smart Livestock Health Surveillance & Early Warning Decision-Support Platform
 
 [![Deployment Ready](https://img.shields.io/badge/Deployment-Production%20Ready-brightgreen.svg)](#deployment-architecture)
-[![SIH Problem Statement](https://img.shields.io/badge/SIH%202024-Problem%206128-blue.svg)](#problem-statement)
+[![SIH Problem Statement](https://img.shields.io/badge/SIH-Problem%20SIH26128-blue.svg)](#problem-statement)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%2B%20Vite-61dafb.svg)](https://vitejs.dev/)
 [![Backend](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express%20%2B%20TypeScript-3178c6.svg)](https://expressjs.com/)
 [![Database](https://img.shields.io/badge/Database-PostgreSQL%20%2F%20Prisma%20ORM-336791.svg)](https://www.prisma.io/)
 
-> **SIH Problem Statement**: 6128  
+> **SIH Problem Statement**: SIH26128  
 > **Organization**: Government of Maharashtra  
 > **Department**: Maharashtra State Innovation Society, Department of Skills, Employment, Entrepreneurship and Innovation  
 > **Implementing Department**: Department of Animal Husbandry, Government of Maharashtra  
@@ -346,7 +346,7 @@ GET /api/health
   "version": "1.0.0",
   "environment": "production",
   "timestamp": "2026-09-07T15:00:00.000Z",
-  "sihProblemStatement": "6128",
+  "sihProblemStatement": "SIH26128",
   "department": "Department of Animal Husbandry, Government of Maharashtra"
 }
 ```
@@ -380,4 +380,4 @@ GET /api/health
 
 ---
 
-*Developed for the Smart India Hackathon (SIH 2024) | Problem Statement 6128 | Government of Maharashtra*
+*Developed for the Smart India Hackathon | Problem Statement SIH26128 | Government of Maharashtra*

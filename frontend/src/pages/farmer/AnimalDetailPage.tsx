@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { api } from '../../services/api';
 import { DataService } from '../../services/dataService';
 import { Animal } from '../../types';
+import { useLanguage, getSpeciesLabel, getSymptomLabel, getBreedLabel, getVaccineLabel, getDiseaseCategoryLabel, getLocationLabel, getSpeciesDefaultPhoto } from '../../context/LanguageContext';
 import { StatusBadge } from '../../components/StatusBadge';
 import { RiskBadge } from '../../components/RiskBadge';
 import {
@@ -10,14 +10,11 @@ import {
   HeartPulse,
   Syringe,
   Pill,
-  Calendar,
-  AlertTriangle,
-  Stethoscope,
-  CheckCircle,
 } from 'lucide-react';
 
 export const AnimalDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const { t, language } = useLanguage();
   const [animal, setAnimal] = useState<Animal | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'reports' | 'vaccines' | 'treatments'>('reports');
@@ -32,19 +29,23 @@ export const AnimalDetailPage: React.FC = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="p-12 text-center text-xs text-slate-500">Loading livestock profile...</div>;
+    return <div className="p-12 text-center text-xs text-slate-500">{t('loadingLivestockProfile')}</div>;
   }
 
   if (!animal) {
     return (
       <div className="p-12 text-center text-xs text-slate-500">
-        Animal profile not found.{' '}
+        {t('animalNotFound')}{' '}
         <Link to="/farmer/livestock" className="text-blue-600 font-bold hover:underline">
-          Return to roster
+          {t('returnToRoster')}
         </Link>
       </div>
     );
   }
+
+  const speciesText = getSpeciesLabel(animal.species, language);
+  const genderText = animal.gender === 'Female' ? t('female') : animal.gender === 'Male' ? t('male') : animal.gender;
+  const yearsUnit = language === 'mr' ? 'वर्षे' : language === 'hi' ? 'वर्ष' : 'Yrs';
 
   return (
     <div className="space-y-6">
@@ -54,18 +55,21 @@ export const AnimalDetailPage: React.FC = () => {
         className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
-        <span>Back to My Livestock</span>
+        <span>{t('backToLivestock')}</span>
       </Link>
 
       {/* Hero Animal Profile Card */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm flex flex-col md:flex-row items-start justify-between gap-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="w-24 h-24 rounded-2xl bg-emerald-50 border border-emerald-200 overflow-hidden flex items-center justify-center text-4xl shrink-0">
-            {animal.photoUrl ? (
-              <img src={animal.photoUrl} alt={animal.name} className="w-full h-full object-cover" />
-            ) : (
-              animal.species === 'Cow' ? '🐄' : animal.species === 'Buffalo' ? '🐃' : '🐐'
-            )}
+            <img
+              src={animal.photoUrl || getSpeciesDefaultPhoto(animal.species)}
+              alt={animal.name || animal.animalCode}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = getSpeciesDefaultPhoto(animal.species);
+              }}
+              className="w-full h-full object-cover"
+            />
           </div>
 
           <div className="space-y-1">
@@ -77,19 +81,19 @@ export const AnimalDetailPage: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-500 font-mono font-bold">
-              Ear Tag: {animal.identificationNumber || animal.animalCode} • Animal Code: {animal.animalCode}
+              {t('earTagId')}: {animal.identificationNumber || animal.animalCode} • {t('animalCode')}: {animal.animalCode}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 text-xs text-slate-700 pt-2 font-medium">
-              <span>Species: <strong>{animal.species}</strong></span>
-              <span>Breed: <strong>{animal.breed}</strong></span>
-              <span>Gender: <strong>{animal.gender}</strong></span>
-              <span>Age: <strong>{animal.ageYears} Yrs</strong></span>
-              {animal.weightKg && <span>Weight: <strong>{animal.weightKg} kg</strong></span>}
+              <span>{t('species')}: <strong>{speciesText}</strong></span>
+              <span>{t('breed')}: <strong>{getBreedLabel(animal.breed, language)}</strong></span>
+              <span>{t('gender')}: <strong>{genderText}</strong></span>
+              <span>{t('age')}: <strong>{animal.ageYears} {yearsUnit}</strong></span>
+              {animal.weightKg && <span>{t('weight')}: <strong>{animal.weightKg} {language === 'mr' ? 'कि.ग्रा.' : 'kg'}</strong></span>}
             </div>
 
             <p className="text-[11px] text-slate-400 pt-1">
-              Registered in {animal.village}, {animal.block}, {animal.district}
+              {t('registeredIn')} {getLocationLabel(animal.village, animal.district, language)}
             </p>
           </div>
         </div>
@@ -100,7 +104,7 @@ export const AnimalDetailPage: React.FC = () => {
           className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold px-4 py-2.5 rounded-xl shadow flex items-center gap-2 shrink-0 transition-transform hover:scale-105"
         >
           <HeartPulse className="w-4 h-4" />
-          <span>Report New Symptoms</span>
+          <span>{t('reportNewSymptoms')}</span>
         </Link>
       </div>
 
@@ -115,7 +119,7 @@ export const AnimalDetailPage: React.FC = () => {
           }`}
         >
           <HeartPulse className="w-3.5 h-3.5" />
-          <span>Symptom Reports ({animal.symptomReports?.length || 0})</span>
+          <span>{t('symptomReportsTab')} ({animal.symptomReports?.length || 0})</span>
         </button>
 
         <button
@@ -127,7 +131,7 @@ export const AnimalDetailPage: React.FC = () => {
           }`}
         >
           <Syringe className="w-3.5 h-3.5" />
-          <span>Vaccinations ({animal.vaccinations?.length || 0})</span>
+          <span>{t('vaccinationsTab')} ({animal.vaccinations?.length || 0})</span>
         </button>
 
         <button
@@ -139,7 +143,7 @@ export const AnimalDetailPage: React.FC = () => {
           }`}
         >
           <Pill className="w-3.5 h-3.5" />
-          <span>Treatments Prescribed ({animal.treatments?.length || 0})</span>
+          <span>{t('treatmentsPrescribedTab')} ({animal.treatments?.length || 0})</span>
         </button>
       </div>
 
@@ -148,44 +152,50 @@ export const AnimalDetailPage: React.FC = () => {
         <div className="space-y-4">
           {(!animal.symptomReports || animal.symptomReports.length === 0) ? (
             <div className="bg-white rounded-2xl p-8 text-center text-xs text-slate-500 border border-slate-200">
-              No symptom reports filed for this animal yet.
+              {t('noSymptomReportsForAnimal')}
             </div>
           ) : (
-            animal.symptomReports.map((report) => (
-              <div key={report.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                  <div>
-                    <span className="font-bold text-slate-900 text-sm">{report.reportCode}</span>
-                    <span className="text-xs text-slate-400 ml-2">
-                      {new Date(report.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <RiskBadge level={report.riskLevel} score={report.riskScore} />
-                    <StatusBadge status={report.status} />
-                  </div>
-                </div>
+            animal.symptomReports.map((report) => {
+              const parsedSymptoms = JSON.parse(report.symptoms || '[]');
+              const localizedSymptoms = parsedSymptoms.map((s: string) => getSymptomLabel(s, language)).join(', ');
+              const severityText = report.severity === 'Mild' ? t('mild') : report.severity === 'Moderate' ? t('moderate') : report.severity === 'Severe' ? t('severe') : report.severity;
 
-                <div className="text-xs text-slate-700 space-y-1">
-                  <p><strong>Reported Symptoms:</strong> {JSON.parse(report.symptoms || '[]').join(', ')}</p>
-                  <p><strong>Duration:</strong> {report.durationDays} days • <strong>Severity:</strong> {report.severity}</p>
-                  {report.temperatureF && <p><strong>Body Temperature:</strong> {report.temperatureF} °F</p>}
-                  {report.additionalDescription && (
-                    <p className="text-slate-600 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-2">
-                      "{report.additionalDescription}"
-                    </p>
+              return (
+                <div key={report.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm">{report.reportCode}</span>
+                      <span className="text-xs text-slate-400 ml-2">
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <RiskBadge level={report.riskLevel} score={report.riskScore} />
+                      <StatusBadge status={report.status} />
+                    </div>
+                  </div>
+
+                  <div className="text-xs text-slate-700 space-y-1">
+                    <p><strong>{t('reportedSymptoms')}:</strong> {localizedSymptoms}</p>
+                    <p><strong>{t('duration')}:</strong> {report.durationDays} {t('daysUnit')} • <strong>{t('severity')}:</strong> {severityText}</p>
+                    {report.temperatureF && <p><strong>{t('bodyTemperature')}:</strong> {report.temperatureF} °F</p>}
+                    {report.additionalDescription && (
+                      <p className="text-slate-600 italic bg-slate-50 p-2.5 rounded-xl border border-slate-100 mt-2">
+                        "{report.additionalDescription}"
+                      </p>
+                    )}
+                  </div>
+
+                  {report.riskAssessment && (
+                    <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+                      <p className="font-bold">{t('automatedDecisionSupport')}:</p>
+                      <p>{t('possibleCondition')}: <strong>{getDiseaseCategoryLabel(report.riskAssessment.possibleCategory, language)}</strong></p>
+                      <p className="text-[11px] text-amber-800">{report.riskAssessment.recommendedAction}</p>
+                    </div>
                   )}
                 </div>
-
-                {report.riskAssessment && (
-                  <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 text-xs text-amber-900 space-y-1">
-                    <p className="font-bold">Automated Decision Support:</p>
-                    <p>Possible Condition: <strong>{report.riskAssessment.possibleCategory}</strong></p>
-                    <p className="text-[11px] text-amber-800">{report.riskAssessment.recommendedAction}</p>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
@@ -195,27 +205,27 @@ export const AnimalDetailPage: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           {(!animal.vaccinations || animal.vaccinations.length === 0) ? (
             <div className="p-8 text-center text-xs text-slate-500">
-              No vaccination records available for this animal.
+              {t('noVaccinationRecordsForAnimal')}
             </div>
           ) : (
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
                 <tr>
-                  <th className="p-3">Vaccine Name</th>
-                  <th className="p-3">Dose #</th>
-                  <th className="p-3">Administered Date</th>
-                  <th className="p-3">Next Due Date</th>
-                  <th className="p-3">Status</th>
+                  <th className="p-3">{t('vaccineName')}</th>
+                  <th className="p-3">{t('doseNumber')}</th>
+                  <th className="p-3">{t('administeredDate')}</th>
+                  <th className="p-3">{t('nextDueDate')}</th>
+                  <th className="p-3">{t('caseStatus')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {animal.vaccinations.map((vac) => (
                   <tr key={vac.id} className="hover:bg-slate-50">
-                    <td className="p-3 font-bold text-slate-900">{vac.vaccineName}</td>
-                    <td className="p-3 text-slate-600">Dose {vac.doseNumber}</td>
+                    <td className="p-3 font-bold text-slate-900">{getVaccineLabel(vac.vaccineName, language)}</td>
+                    <td className="p-3 text-slate-600">{t('dose')} {vac.doseNumber}</td>
                     <td className="p-3 text-slate-600">{new Date(vac.administeredDate).toLocaleDateString()}</td>
                     <td className="p-3 text-slate-600">
-                      {vac.nextDueDate ? new Date(vac.nextDueDate).toLocaleDateString() : 'N/A'}
+                      {vac.nextDueDate ? new Date(vac.nextDueDate).toLocaleDateString() : (language === 'mr' ? 'उपलब्ध नाही' : 'N/A')}
                     </td>
                     <td className="p-3">
                       <StatusBadge status={vac.status} />
@@ -233,40 +243,40 @@ export const AnimalDetailPage: React.FC = () => {
         <div className="space-y-4">
           {(!animal.treatments || animal.treatments.length === 0) ? (
             <div className="bg-white rounded-2xl p-8 text-center text-xs text-slate-500 border border-slate-200">
-              No veterinary prescriptions recorded for this animal yet.
+              {t('noTreatmentsForAnimal')}
             </div>
           ) : (
-            animal.treatments.map((t) => (
-              <div key={t.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
+            animal.treatments.map((tr) => (
+              <div key={tr.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm">Diagnosis: {t.diagnosis}</h4>
+                    <h4 className="font-bold text-slate-900 text-sm">{t('diagnosis')}: {tr.diagnosis}</h4>
                     <p className="text-xs text-slate-500">
-                      Prescribed by {t.vet?.user?.name || 'Veterinary Officer'} on {new Date(t.startDate).toLocaleDateString()}
+                      {t('prescribedBy')} {tr.vet?.user?.name || t('veterinarian')} • {new Date(tr.startDate).toLocaleDateString()}
                     </p>
                   </div>
-                  {t.followUpDate && (
+                  {tr.followUpDate && (
                     <span className="text-[11px] bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-lg">
-                      Follow-up: {new Date(t.followUpDate).toLocaleDateString()}
+                      {t('followUp')}: {new Date(tr.followUpDate).toLocaleDateString()}
                     </span>
                   )}
                 </div>
 
                 <div className="space-y-2">
-                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Prescribed Medicines:</p>
+                  <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">{t('prescribedMedicines')}:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {JSON.parse(t.medicines || '[]').map((m: any, i: number) => (
+                    {JSON.parse(tr.medicines || '[]').map((m: any, i: number) => (
                       <div key={i} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                         <p className="font-bold text-slate-900">{m.name}</p>
-                        <p className="text-slate-600 text-[11px]">Dosage: {m.dosage} • Frequency: {m.frequency} • {m.duration}</p>
+                        <p className="text-slate-600 text-[11px]">{t('dosage')}: {m.dosage} • {t('frequency')}: {m.frequency} • {m.duration}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {t.instructions && (
+                {tr.instructions && (
                   <p className="text-xs text-slate-600 bg-emerald-50 p-2.5 rounded-xl border border-emerald-100">
-                    <strong>Care Instructions:</strong> {t.instructions}
+                    <strong>{t('careInstructions')}:</strong> {tr.instructions}
                   </p>
                 )}
               </div>

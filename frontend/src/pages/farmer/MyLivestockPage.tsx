@@ -4,18 +4,17 @@ import { api } from '../../services/api';
 import { DataService } from '../../services/dataService';
 import { FALLBACK_ANIMALS } from '../../services/fallbackData';
 import { Animal } from '../../types';
+import { useLanguage, getSpeciesLabel, getBreedLabel, getLocationLabel, getSpeciesDefaultPhoto } from '../../context/LanguageContext';
 import { StatusBadge } from '../../components/StatusBadge';
 import { Modal } from '../../components/Modal';
 import { PhotoUpload } from '../../components/PhotoUpload';
 import {
   PlusCircle,
   Search,
-  Filter,
   HeartPulse,
-  Syringe,
   Eye,
   AlertCircle,
-  CheckCircle,
+  Camera,
 } from 'lucide-react';
 
 const SPECIES_BREED_MAP: Record<string, string[]> = {
@@ -77,15 +76,37 @@ const SPECIES_BREED_MAP: Record<string, string[]> = {
 };
 
 export const MyLivestockPage: React.FC = () => {
+  const { t, language } = useLanguage();
   const [animals, setAnimals] = useState<Animal[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedSpecies, setSelectedSpecies] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Modal State
+  // Add Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Photo Update Modal State
+  const [isPhotoModalOpen, setIsPhotoModalOpen] = useState(false);
+  const [selectedPhotoAnimal, setSelectedPhotoAnimal] = useState<Animal | null>(null);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [isSavingPhoto, setIsSavingPhoto] = useState(false);
+
+  const handleSavePhoto = async () => {
+    if (!selectedPhotoAnimal || !newPhotoUrl) return;
+    setIsSavingPhoto(true);
+    try {
+      await api.patch(`/animals/${selectedPhotoAnimal.id}`, { photoUrl: newPhotoUrl });
+    } catch (err) {
+      console.warn('API update failed, updating local state:', err);
+    }
+    setAnimals((prev) =>
+      prev.map((a) => (a.id === selectedPhotoAnimal.id ? { ...a, photoUrl: newPhotoUrl } : a))
+    );
+    setIsSavingPhoto(false);
+    setIsPhotoModalOpen(false);
+  };
 
   const [formData, setFormData] = useState({
     name: '',
@@ -141,13 +162,13 @@ export const MyLivestockPage: React.FC = () => {
     setModalError(null);
 
     if (!formData.species) {
-      setModalError('Please select a species first before choosing breed.');
+      setModalError(t('pleaseSelectSpeciesFirst'));
       setSubmitting(false);
       return;
     }
 
     if (!formData.breed) {
-      setModalError('Please select a breed.');
+      setModalError(t('pleaseSelectBreed'));
       setSubmitting(false);
       return;
     }
@@ -204,11 +225,13 @@ export const MyLivestockPage: React.FC = () => {
         setIsAddModalOpen(false);
         return;
       }
-      setModalError(err.response?.data?.error || 'Failed to add animal.');
+      setModalError(err.response?.data?.error || t('failedToAddAnimal'));
     } finally {
       setSubmitting(false);
     }
   };
+
+  const yearsUnit = language === 'mr' ? 'वर्षे' : language === 'hi' ? 'वर्ष' : 'Years';
 
   return (
     <div className="space-y-6">
@@ -216,10 +239,10 @@ export const MyLivestockPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-slate-900 font-['Outfit']">
-            My Livestock / माझे पशुधन
+            {t('myLivestockTitle')}
           </h1>
           <p className="text-xs text-slate-500">
-            Registered livestock roster with digital health tags and vaccination records
+            {t('myLivestockSubtitle')}
           </p>
         </div>
 
@@ -228,7 +251,7 @@ export const MyLivestockPage: React.FC = () => {
           className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow flex items-center gap-2 self-start sm:self-auto transition-transform hover:scale-105"
         >
           <PlusCircle className="w-4 h-4" />
-          <span>Add New Animal (पशू जोडा)</span>
+          <span>{t('addAnimal')}</span>
         </button>
       </div>
 
@@ -246,7 +269,7 @@ export const MyLivestockPage: React.FC = () => {
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
-              {sp === 'ALL' ? 'All Species' : sp}
+              {getSpeciesLabel(sp, language)}
             </button>
           ))}
         </div>
@@ -255,7 +278,7 @@ export const MyLivestockPage: React.FC = () => {
         <form onSubmit={handleSearch} className="relative w-full md:w-72">
           <input
             type="text"
-            placeholder="Search Ear Tag, Name, Breed..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full text-xs pl-8 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none"
@@ -266,96 +289,115 @@ export const MyLivestockPage: React.FC = () => {
 
       {/* Livestock Roster Grid */}
       {loading ? (
-        <div className="p-12 text-center text-xs text-slate-500">Loading livestock roster...</div>
+        <div className="p-12 text-center text-xs text-slate-500">{t('loadingLivestock')}</div>
       ) : animals.length === 0 ? (
         <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-12 text-center space-y-3">
-          <p className="text-sm font-semibold text-slate-700">No livestock found matching criteria.</p>
-          <p className="text-xs text-slate-500">Register your cattle, buffalo, or goats to start monitoring their health.</p>
+          <p className="text-sm font-semibold text-slate-700">{t('noLivestockFound')}</p>
+          <p className="text-xs text-slate-500">{t('registerToStartMonitoring')}</p>
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-xl"
           >
             <PlusCircle className="w-4 h-4" />
-            <span>Add First Livestock</span>
+            <span>{t('addFirstLivestock')}</span>
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {animals.map((animal) => (
-            <div
-              key={animal.id}
-              className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
-            >
-              <div>
-                {/* Photo Header */}
-                <div className="h-40 bg-slate-100 relative overflow-hidden">
-                  {animal.photoUrl ? (
+          {animals.map((animal) => {
+            const speciesText = getSpeciesLabel(animal.species, language);
+            const genderText = animal.gender === 'Female' ? t('female') : animal.gender === 'Male' ? t('male') : animal.gender;
+
+            return (
+              <div
+                key={animal.id}
+                className="bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col justify-between"
+              >
+                <div>
+                  {/* Photo Header */}
+                  <div className="h-44 bg-slate-100 relative overflow-hidden group">
                     <img
-                      src={animal.photoUrl}
+                      src={animal.photoUrl || getSpeciesDefaultPhoto(animal.species)}
                       alt={animal.name || animal.animalCode}
-                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = getSpeciesDefaultPhoto(animal.species);
+                      }}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-4xl bg-gradient-to-br from-emerald-50 to-teal-100 text-emerald-700">
-                      {animal.species === 'Cow' ? '🐄' : animal.species === 'Buffalo' ? '🐃' : animal.species === 'Goat' ? '🐐' : '🐾'}
+
+                    {/* Status Badge Over Image */}
+                    <div className="absolute top-3 right-3">
+                      <StatusBadge status={animal.healthStatus} />
                     </div>
-                  )}
 
-                  {/* Status Badge Over Image */}
-                  <div className="absolute top-3 right-3">
-                    <StatusBadge status={animal.healthStatus} />
+                    {/* Ear Tag Badge */}
+                    <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
+                      {animal.identificationNumber || animal.animalCode}
+                    </div>
+
+                    {/* Add / Change Photo Button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setSelectedPhotoAnimal(animal);
+                        setNewPhotoUrl(animal.photoUrl || '');
+                        setIsPhotoModalOpen(true);
+                      }}
+                      className="absolute bottom-3 right-3 bg-slate-900/80 hover:bg-slate-950 text-white text-[10px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 shadow transition-all hover:scale-105"
+                      title={t('addPhoto')}
+                    >
+                      <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>{animal.photoUrl ? t('changePhoto') : t('addPhoto')}</span>
+                    </button>
                   </div>
 
-                  {/* Ear Tag Badge */}
-                  <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
-                    {animal.identificationNumber || animal.animalCode}
+                  {/* Body details */}
+                  <div className="p-4 space-y-2">
+                    <div className="flex items-baseline justify-between">
+                      <h3 className="font-bold text-base text-slate-900 font-['Outfit']">
+                        {animal.name || animal.animalCode}
+                      </h3>
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                        {speciesText}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-600 grid grid-cols-2 gap-x-2 gap-y-1 pt-1">
+                      <p><strong>{t('breed')}:</strong> {getBreedLabel(animal.breed, language)}</p>
+                      <p><strong>{t('gender')}:</strong> {genderText}</p>
+                      <p><strong>{t('age')}:</strong> {animal.ageYears} {yearsUnit}</p>
+                      <p><strong>{t('weight')}:</strong> {animal.weightKg ? `${animal.weightKg} ${language === 'mr' ? 'कि.ग्रा.' : 'kg'}` : (language === 'mr' ? 'उपलब्ध नाही' : 'N/A')}</p>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+                      {t('location')}: {getLocationLabel(animal.village, animal.district, language)}
+                    </p>
                   </div>
                 </div>
 
-                {/* Body details */}
-                <div className="p-4 space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-bold text-base text-slate-900 font-['Outfit']">
-                      {animal.name || animal.animalCode}
-                    </h3>
-                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                      {animal.species}
-                    </span>
-                  </div>
+                {/* Card Footer Actions */}
+                <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <Link
+                    to={`/farmer/report-symptoms?animalId=${animal.id}`}
+                    className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <HeartPulse className="w-3.5 h-3.5" />
+                    <span>{t('reportSymptomBtn')}</span>
+                  </Link>
 
-                  <div className="text-xs text-slate-600 grid grid-cols-2 gap-x-2 gap-y-1 pt-1">
-                    <p><strong>Breed:</strong> {animal.breed}</p>
-                    <p><strong>Gender:</strong> {animal.gender}</p>
-                    <p><strong>Age:</strong> {animal.ageYears} Years</p>
-                    <p><strong>Weight:</strong> {animal.weightKg ? `${animal.weightKg} kg` : 'N/A'}</p>
-                  </div>
-
-                  <p className="text-[11px] text-slate-400 pt-1 border-t border-slate-100">
-                    Location: {animal.village}, {animal.district}
-                  </p>
+                  <Link
+                    to={`/farmer/livestock/${animal.id}`}
+                    className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{t('medicalRecord')}</span>
+                  </Link>
                 </div>
               </div>
-
-              {/* Card Footer Actions */}
-              <div className="p-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
-                <Link
-                  to={`/farmer/report-symptoms?animalId=${animal.id}`}
-                  className="text-xs font-bold text-amber-700 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <HeartPulse className="w-3.5 h-3.5" />
-                  <span>Report Symptom</span>
-                </Link>
-
-                <Link
-                  to={`/farmer/livestock/${animal.id}`}
-                  className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Medical Record</span>
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -363,7 +405,7 @@ export const MyLivestockPage: React.FC = () => {
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        title="Register New Livestock (नवीन जनावर नोंदवा)"
+        title={t('registerNewLivestock')}
         maxWidth="lg"
       >
         {modalError && (
@@ -377,11 +419,11 @@ export const MyLivestockPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Animal Name (नाव)
+                {t('animalName')}
               </label>
               <input
                 type="text"
-                placeholder="e.g. Gauri / लक्ष्मी"
+                placeholder={language === 'mr' ? 'उदा. गौरी / लक्ष्मी' : 'e.g. Gauri / Lakshmi'}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500"
@@ -390,7 +432,7 @@ export const MyLivestockPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Species (प्रजाती) *
+                {t('species')} *
               </label>
               <select
                 value={formData.species}
@@ -398,13 +440,13 @@ export const MyLivestockPage: React.FC = () => {
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-medium focus:ring-2 focus:ring-emerald-500"
                 required
               >
-                <option value="">— Select Species First (प्रजाती निवडा) —</option>
-                <option value="Cow">Cow (गाय)</option>
-                <option value="Buffalo">Buffalo (म्हैस)</option>
-                <option value="Goat">Goat (शेळी)</option>
-                <option value="Sheep">Sheep (मेंढी)</option>
-                <option value="Poultry">Poultry (कुक्कुटपालन)</option>
-                <option value="Other">Other (इतर)</option>
+                <option value="">{t('selectSpeciesFirst')}</option>
+                <option value="Cow">{getSpeciesLabel('Cow', language)}</option>
+                <option value="Buffalo">{getSpeciesLabel('Buffalo', language)}</option>
+                <option value="Goat">{getSpeciesLabel('Goat', language)}</option>
+                <option value="Sheep">{getSpeciesLabel('Sheep', language)}</option>
+                <option value="Poultry">{getSpeciesLabel('Poultry', language)}</option>
+                <option value="Other">{getSpeciesLabel('Other', language)}</option>
               </select>
             </div>
           </div>
@@ -412,7 +454,7 @@ export const MyLivestockPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Breed (जात) *
+                {t('breed')} *
               </label>
               <select
                 disabled={!formData.species}
@@ -426,13 +468,13 @@ export const MyLivestockPage: React.FC = () => {
                 required
               >
                 {!formData.species ? (
-                  <option value="">— Select Species First —</option>
+                  <option value="">{t('selectSpeciesFirst')}</option>
                 ) : (
                   <>
-                    <option value="">— Select Breed (जात निवडा) —</option>
+                    <option value="">{t('selectBreed')}</option>
                     {(SPECIES_BREED_MAP[formData.species] || ['Other / Unknown']).map((b) => (
                       <option key={b} value={b}>
-                        {b}
+                        {getBreedLabel(b, language)}
                       </option>
                     ))}
                   </>
@@ -440,22 +482,22 @@ export const MyLivestockPage: React.FC = () => {
               </select>
               {!formData.species && (
                 <p className="text-[10px] text-amber-600 mt-1 font-medium">
-                  ⚠️ Please choose a species above to view available breeds.
+                  {t('chooseSpeciesHint')}
                 </p>
               )}
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Gender (लिंग) *
+                {t('gender')} *
               </label>
               <select
                 value={formData.gender}
                 onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-medium"
               >
-                <option value="Female">Female (मादी)</option>
-                <option value="Male">Male (नर)</option>
+                <option value="Female">{t('female')}</option>
+                <option value="Male">{t('male')}</option>
               </select>
             </div>
           </div>
@@ -464,12 +506,12 @@ export const MyLivestockPage: React.FC = () => {
           {formData.breed === 'Other / Unknown' && (
             <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl space-y-1 animate-fadeIn">
               <label className="block text-xs font-bold text-amber-900 uppercase">
-                Specify Custom Breed / इतर जात नमूद करा *
+                {t('specifyCustomBreed')} *
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Non-descript local cross, Malvi, Pandharpuri mix..."
+                placeholder={t('customBreedPlaceholder')}
                 value={formData.customBreed}
                 onChange={(e) => setFormData({ ...formData, customBreed: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none focus:ring-2 focus:ring-amber-500 font-medium"
@@ -480,13 +522,13 @@ export const MyLivestockPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Age in Years *
+                {t('ageYears')} *
               </label>
               <input
                 type="number"
                 step="0.1"
                 required
-                placeholder="e.g. 3.5"
+                placeholder={language === 'mr' ? 'उदा. ३.५' : 'e.g. 3.5'}
                 value={formData.ageYears}
                 onChange={(e) => setFormData({ ...formData, ageYears: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
@@ -495,11 +537,11 @@ export const MyLivestockPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Weight (kg)
+                {t('weightKg')}
               </label>
               <input
                 type="number"
-                placeholder="e.g. 380"
+                placeholder={language === 'mr' ? 'उदा. ३८०' : 'e.g. 380'}
                 value={formData.weightKg}
                 onChange={(e) => setFormData({ ...formData, weightKg: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none"
@@ -508,11 +550,11 @@ export const MyLivestockPage: React.FC = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
-                Ear Tag ID / बिल्ला
+                {t('earTagId')}
               </label>
               <input
                 type="text"
-                placeholder="e.g. TAG-MH-829101"
+                placeholder={language === 'mr' ? 'उदा. TAG-MH-829101' : 'e.g. TAG-MH-829101'}
                 value={formData.identificationNumber}
                 onChange={(e) => setFormData({ ...formData, identificationNumber: e.target.value })}
                 className="w-full text-xs px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl outline-none font-mono"
@@ -525,8 +567,8 @@ export const MyLivestockPage: React.FC = () => {
             <PhotoUpload
               value={formData.photoUrl}
               onChange={(url) => setFormData((prev) => ({ ...prev, photoUrl: url }))}
-              label="Livestock Photo (जनावराचा फोटो - ऐच्छिक)"
-              helperText="Capture with mobile camera or upload from gallery (JPEG, PNG, WebP ≤ 5MB)"
+              label={t('livestockPhoto')}
+              helperText={t('photoUploadHelper')}
             />
           </div>
 
@@ -536,17 +578,61 @@ export const MyLivestockPage: React.FC = () => {
               onClick={() => setIsAddModalOpen(false)}
               className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
             >
-              Cancel
+              {t('cancel')}
             </button>
             <button
               type="submit"
               disabled={submitting}
               className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition-colors disabled:opacity-50"
             >
-              {submitting ? 'Saving...' : 'Register Livestock'}
+              {submitting ? t('saving') : t('registerLivestockBtn')}
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Edit / Add Animal Photo Modal */}
+      <Modal
+        isOpen={isPhotoModalOpen}
+        onClose={() => setIsPhotoModalOpen(false)}
+        title={selectedPhotoAnimal?.photoUrl ? t('changePhoto') : t('addPhoto')}
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+            <p className="font-bold text-slate-900">
+              {selectedPhotoAnimal?.name || selectedPhotoAnimal?.animalCode}
+            </p>
+            <p className="text-slate-500 text-[11px]">
+              {t('earTagId')}: <span className="font-mono font-bold text-slate-700">{selectedPhotoAnimal?.identificationNumber || selectedPhotoAnimal?.animalCode}</span>
+            </p>
+          </div>
+
+          <PhotoUpload
+            value={newPhotoUrl}
+            onChange={(url) => setNewPhotoUrl(url)}
+            label={t('livestockPhoto')}
+            helperText={t('photoUploadHelper')}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setIsPhotoModalOpen(false)}
+              className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={handleSavePhoto}
+              disabled={!newPhotoUrl || isSavingPhoto}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow transition-colors disabled:opacity-50"
+            >
+              {isSavingPhoto ? t('saving') : t('save')}
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

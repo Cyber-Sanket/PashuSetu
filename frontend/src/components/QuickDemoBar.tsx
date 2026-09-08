@@ -1,10 +1,12 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { UserCheck, Stethoscope, Building2, Sparkles } from 'lucide-react';
 
 export const QuickDemoBar: React.FC = () => {
   const { loginAsDemo, user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const handleDemo = async (role: 'FARMER' | 'VETERINARIAN' | 'GOVERNMENT') => {
@@ -19,7 +21,7 @@ export const QuickDemoBar: React.FC = () => {
       <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>SIH Evaluator Quick Access (1-Click Test Portals):</span>
+          <span>{t('sihQuickAccess')}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -32,7 +34,7 @@ export const QuickDemoBar: React.FC = () => {
             }`}
           >
             <UserCheck className="w-3 h-3" />
-            <span>Farmer (Patil)</span>
+            <span>{t('patilFarmer')}</span>
           </button>
 
           <button
@@ -44,7 +46,7 @@ export const QuickDemoBar: React.FC = () => {
             }`}
           >
             <Stethoscope className="w-3 h-3" />
-            <span>Veterinarian (Dr. Kulkarni)</span>
+            <span>{t('kulkarniVet')}</span>
           </button>
 
           <button
@@ -56,7 +58,7 @@ export const QuickDemoBar: React.FC = () => {
             }`}
           >
             <Building2 className="w-3 h-3" />
-            <span>Government (Dr. Deshmukh)</span>
+            <span>{t('deshmukhGovt')}</span>
           </button>
         </div>
       </div>

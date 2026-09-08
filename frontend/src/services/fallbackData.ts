@@ -165,6 +165,7 @@ export const FALLBACK_ANIMALS: Animal[] = [
     color: 'Pale Red',
     identificationNumber: 'TAG-MH-829104',
     healthStatus: 'HEALTHY',
+    photoUrl: '/images/animals/kapila.jpg',
     village: 'Uruli Kanchan',
     block: 'Haveli',
     district: 'Pune',

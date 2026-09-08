@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Camera, Image as ImageIcon, X, RefreshCw, UploadCloud, AlertCircle, CheckCircle } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 
 interface PhotoUploadProps {
@@ -13,10 +14,14 @@ interface PhotoUploadProps {
 export const PhotoUpload: React.FC<PhotoUploadProps> = ({
   value,
   onChange,
-  label = 'Upload Photo',
-  helperText = 'JPEG, PNG, or WebP up to 5MB',
+  label,
+  helperText,
   required = false,
 }) => {
+  const { t } = useLanguage();
+  const displayLabel = label || t('uploadPhoto');
+  const displayHelper = helperText || t('photoUploadHelper');
+
   const [previewUrl, setPreviewUrl] = useState<string>(value || '');
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -32,14 +37,14 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
     // 1. Validate MIME Type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (!validTypes.includes(file.type.toLowerCase())) {
-      setUploadError('Invalid format. Please select a JPEG, PNG, or WebP image.');
+      setUploadError(t('invalidFormat'));
       return;
     }
 
     // 2. Validate Size (5MB)
     const maxSize = 5 * 1024 * 1024;
     if (file.size > maxSize) {
-      setUploadError('File size exceeds the 5MB limit. Please choose a smaller photo.');
+      setUploadError(t('fileSizeExceeded'));
       return;
     }
 
@@ -66,7 +71,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
       setTimeout(() => setUploadSuccess(false), 3000);
     } catch (err: any) {
       console.error('Upload failed:', err);
-      const msg = err.response?.data?.error || 'Failed to upload photo to server. Please try again.';
+      const msg = err.response?.data?.error || t('uploadFailed');
       setUploadError(msg);
       // Revert if upload failed
       setPreviewUrl(value || '');
@@ -107,11 +112,11 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-          {label} {required && <span className="text-red-500">*</span>}
+          {displayLabel} {required && <span className="text-red-500">*</span>}
         </label>
         {previewUrl && (
           <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-            <CheckCircle className="w-3.5 h-3.5" /> Photo attached
+            <CheckCircle className="w-3.5 h-3.5" /> {t('photoAttached')}
           </span>
         )}
       </div>
@@ -148,9 +153,9 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
 
             <div>
               <p className="text-xs font-bold text-slate-800">
-                Click to choose or drag & drop photo
+                {t('clickToUpload')}
               </p>
-              <p className="text-[11px] text-slate-500 mt-0.5">{helperText}</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">{displayHelper}</p>
             </div>
 
             {/* Action Buttons for Mobile / Desktop */}
@@ -164,7 +169,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm transition-colors"
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span>Use Camera</span>
+                <span>{t('useCamera')}</span>
               </button>
 
               <button
@@ -176,7 +181,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold transition-colors"
               >
                 <ImageIcon className="w-3.5 h-3.5" />
-                <span>Gallery</span>
+                <span>{t('gallery')}</span>
               </button>
             </div>
           </div>
@@ -197,7 +202,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
             {isUploading && (
               <div className="absolute inset-0 bg-slate-900/60 flex flex-col items-center justify-center text-white">
                 <RefreshCw className="w-6 h-6 animate-spin text-emerald-400 mb-2" />
-                <span className="text-xs font-semibold">Uploading & securing photo...</span>
+                <span className="text-xs font-semibold">{t('uploadingSecuring')}</span>
               </div>
             )}
           </div>
@@ -205,7 +210,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
           {/* Action Toolbar on Image */}
           <div className="p-2.5 bg-slate-800 border-t border-slate-700 flex items-center justify-between text-xs">
             <span className="text-slate-300 text-[11px] truncate max-w-[200px]">
-              {uploadSuccess ? '✓ Uploaded successfully' : 'Photo Attached'}
+              {uploadSuccess ? `✓ ${t('uploadedSuccess')}` : t('photoAttached')}
             </span>
 
             <div className="flex items-center gap-2">
@@ -216,7 +221,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors"
               >
                 <RefreshCw className="w-3 h-3" />
-                <span>Replace</span>
+                <span>{t('replace')}</span>
               </button>
 
               <button
@@ -226,7 +231,7 @@ export const PhotoUpload: React.FC<PhotoUploadProps> = ({
                 className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-red-900/40 hover:bg-red-900/70 text-red-300 text-xs font-medium transition-colors border border-red-800/50"
               >
                 <X className="w-3 h-3" />
-                <span>Remove</span>
+                <span>{t('remove')}</span>
               </button>
             </div>
           </div>
